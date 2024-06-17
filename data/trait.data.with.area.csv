@@ -1,0 +1,153 @@
+"curveID","ID","Date.collected","Date.measured","LICOR.name","siteID","site","taxon","species","turf_number","Elevation.masl","Note_1","notes","day","remarks_2","remark_dry_weighing","notes_rest_1","notes_rest_2","remarks_2_rest","remark_dry_weighing_rest","wet_mass_total_g","dry_mass_total_g","area_cutout_cm2","area_total_cm2","LMA_g_m2","LDMC_mg_g","leaf_thickness_avg_mm"
+1000,"BHI5482","23-Jul","24-Jul","Pennell","Vik",1,"Achillea millefolium","Achillea",1,469,"","Group training",24,NA,"scanned? box not ticked","","Group training",NA,NA,0.2799,0.0567,3.179,7.351,77.1323629438172,202.572347266881,0.251333333333333
+1001,"BHN4026","23-Jul","24-Jul","Michaletz.2","Vik",1,"Achillea millefolium","Achillea",1,469,"","Group training",24,NA,NA,"","Group training",NA,NA,0.5016,NA,3.282,12.71,NA,NA,0.285166666666667
+1002,"BLV7008","25-Jul","25-Jul","","Vik",1,"Alchemilla alpina","Alchemilla",6,469,"","",25,NA,NA,"","",NA,NA,0.0807,0.01955,2.143,3.655,53.4883720930232,242.255266418835,0.191333333333333
+1004,"BEK4966","25-Jul","25-Jul","","Vik",1,"Vaccinium vitis-idaea","Vaccinium",1,469,"","",25,NA,NA,"","",NA,NA,0.0291,0.01284,0.856,0.985,130.355329949239,441.237113402062,0.317333333333333
+1005,"AGM4982","25-Jul","25-Jul","","Vik",1,"Vaccinium vitis-idaea","Vaccinium",4,469,"","Not in the folder but on the licor",25,NA,NA,"","Not in the folder but on the licor",NA,NA,0.0459,0.01668,1.586,1.656,100.724637681159,363.398692810457,0.285666666666667
+1006,"BFK2921","25-Jul","25-Jul","","Vik",1,"Achillea millefolium","Achillea",1,469,"","",25,NA,NA,"","",NA,NA,0.1341,0.02657,1.571,5.093,52.1696446102494,198.13571961223,0.326666666666667
+1007,"BLD2939","25-Jul","25-Jul","","Vik",1,"Alchemilla alpina","Alchemilla",6,469,"","",25,NA,NA,"","",NA,NA,0.1789,NA,2.417,8.049,NA,NA,0.2075
+1008,"BLJ2761","25-Jul","25-Jul","","Vik",1,"Vaccinium vitis-idaea","Vaccinium",4,469,"","",25,NA,NA,NA,NA,NA,NA,NA,NA,1.331,NA,NA,NA,0.306666666666667
+1009,"BKO0418","25-Jul","25-Jul","","Vik",1,"Alchemilla alpina","Alchemilla",6,469,"","",25,NA,NA,"","",NA,NA,0.1155,0.03455,2.323,5.44,63.5110294117647,299.134199134199,0.201333333333333
+1010,"BKC1131","25-Jul","25-Jul","","Vik",1,"Achillea millefolium","Achillea",2,469,"","991 logged before match! but 992 is final match",25,NA,NA,"","991 logged before match! but 992 is final match",NA,NA,0.31,0.04523,1.749,9.964,45.3934162986752,145.903225806452,0.188333333333333
+1011,"BKQ4537","25-Jul","25-Jul","","Vik",1,"Vaccinium vitis-idaea","Vaccinium",4,469,"","",25,NA,NA,"","","only one thickness measurement taken",NA,0.0422,NA,1.391,1.596,NA,NA,0.24275
+1012,"ANK2056","25-Jul","25-Jul","","Vik",1,"Alchemilla alpina","Alchemilla",6,469,"","",25,NA,NA,"","",NA,NA,0.1226,0.03247,2.391,6.775,47.9261992619926,264.84502446982,0.210333333333333
+1013,"BLZ2161","25-Jul","25-Jul","","Vik",1,"Agrostis capillaris","Agrostis",2,469,"","",25,NA,NA,"","",NA,NA,0.0882,0.0243,0.999,7.172,33.8817624093698,275.510204081633,0.156833333333333
+1014,"BLU4049","25-Jul","25-Jul","","Vik",1,"Vaccinium vitis-idaea","Vaccinium",4,469,"","",25,NA,NA,"","",NA,NA,0.0507,0.01892,1.456,1.918,98.6444212721585,373.175542406312,0.261666666666667
+1015,"BKV5661","25-Jul","25-Jul","","Vik",1,"Agrostis capillaris","Agrostis",5,469,"","",25,NA,NA,"","",NA,NA,0.0539,0.01993,0.859,4.682,42.5672789406237,369.758812615955,0.116166666666667
+1016,"BKS0933","25-Jul","25-Jul","","Vik",1,"Agrostis capillaris","Agrostis",3,469,"","",25,NA,NA,"","",NA,NA,0.2419,0.02406,1.545,7.193,33.4491867093007,99.4625878462175,0.152666666666667
+1017,"BEG8800","25-Jul","25-Jul","","Vik",1,"Agrostis capillaris","Agrostis",2,469,"","",25,NA,NA,"","",NA,NA,0.051,0.01479,0.425,3.524,41.9693530079455,290,0.168
+1018,"BES7230","25-Jul","25-Jul","","Vik",1,"Agrostis capillaris","Agrostis",3,469,"","80% confidence on the turf number",25,NA,NA,"","80% confidence on the turf number",NA,NA,0.313,0.05918,1.434,8.299,71.3097963610073,189.073482428115,0.165833333333333
+1019,"ADR5216","26-Jul","26-Jul","","Hog",2,"Achillea millefolium","Achillea",2,700,"","",26,NA,NA,"","",NA,NA,0.7656,0.12168,2.859,24.59,49.4835298901993,158.934169278997,0.2045
+1020,"ADA8830","26-Jul","26-Jul","","Hog",2,"Alchemilla alpina","Alchemilla",4,700,"","",26,NA,NA,"","",NA,NA,0.2007,0.06669,2.734,8.896,74.9662769784173,332.286995515695,0.196333333333333
+1022,"ADN5481","26-Jul","26-Jul","","Hog",2,"Achillea millefolium","Achillea",2,700,"","",26,NA,NA,"","",NA,NA,0.43469,NA,2.106,12.295,NA,NA,0.324166666666667
+1023,"ADE4791","26-Jul","26-Jul","","Hog",2,"Vaccinium vitis-idaea","Vaccinium",4,700,"","",26,NA,NA,"","",NA,"no leafes",NA,NA,0.953,NA,NA,NA,0.319333333333333
+1025,"ADI4485","26-Jul","26-Jul","","Hog",2,"Vaccinium vitis-idaea","Vaccinium",3,700,"","",26,NA,NA,"","",NA,NA,0.0473,NA,0.899,1.302,NA,NA,0.402166666666667
+1026,"AMP4390","26-Jul","26-Jul","","Hog",2,"Agrostis capillaris","Agrostis",1,700,"","",26,NA,NA,"","",NA,NA,0.1702,NA,1.433,14.015,NA,NA,0.130933333333333
+1027,"ALJ0966","26-Jul","26-Jul","","Hog",2,"Agrostis capillaris","Agrostis",6,700,"","",26,NA,NA,"","",NA,NA,0.06,NA,0.882,5.031,NA,NA,0.150666666666667
+1028,"ALV0611","26-Jul","26-Jul","","Hog",2,"Achillea millefolium","Achillea",2,700,"","",26,NA,NA,"","",NA,NA,0.1309,0.08743,3.812,18.485,47.2978090343522,667.914438502674,0.272666666666667
+1029,"AMS3743","26-Jul","26-Jul","","Hog",2,"Vaccinium vitis-idaea","Vaccinium",3,700,"","Area may be a bit off",26,NA,NA,"","Area may be a bit off",NA,NA,0.0744,NA,1.643,2.091,NA,NA,0.4134
+1030,"AMU9096","26-Jul","26-Jul","","Hog",2,"Alchemilla alpina","Alchemilla",6,700,"","Matching was done towards the end of the program running",26,NA,NA,"","Matching was done towards the end of the program running",NA,NA,0.1152,0.03025,2.237,5.301,57.0647047726844,262.586805555556,0.174333333333333
+1031,"CFV7490","26-Jul","26-Jul","","Hog",2,"Agrostis capillaris","Agrostis",1,700,"","",26,NA,NA,"","","2 leaves but 4 parts of leaves (2 per leaf)",NA,0.1128,NA,1.242,9.017,NA,NA,0.194333333333333
+1032,"CGH9581","26-Jul","26-Jul","","Hog",2,"Achillea millefolium","Achillea",6,700,"","",26,NA,NA,"","",NA,NA,0.1064,0.02045,1.792,5.729,35.6955838715308,192.199248120301,0.1815
+1033,"CDO3075","26-Jul","26-Jul","","Hog",2,"Vaccinium vitis-idaea","Vaccinium",3,700,"","",26,NA,NA,"","","third thickness missing",NA,0.0646,NA,1.645,1.832,NA,NA,0.3792
+1034,"CGT0649","26-Jul","26-Jul","","Hog",2,"Vaccinium vitis-idaea","Vaccinium",5,700,"","",26,NA,NA,"","","Individual number inferred by process of elimination",NA,0.0352,NA,1.201,1.42,NA,NA,0.303833333333333
+1035,"CGO5504","26-Jul","26-Jul","","Hog",2,"Alchemilla alpina","Alchemilla",4,700,"","Light intensity incorrect at 433",26,NA,NA,"","Light intensity incorrect at 433",NA,NA,0.2271,NA,2.232,9.138,NA,NA,0.196833333333333
+1036,"CGK0527","26-Jul","26-Jul","","Hog",2,"Agrostis capillaris","Agrostis",6,700,"","Includes an extra logged point",26,NA,NA,"","Includes an extra logged point",NA,NA,0.0682,0.01798,1.08,5.375,33.4511627906977,263.636363636364,0.142
+1037,"CGR4422","26-Jul","26-Jul","","Hog",2,"Achillea millefolium","Achillea",2,700,"","",26,"no weight, individual number inferred by process of elimination",NA,"","","no weight",NA,NA,0.05648,2.211,12.47,45.2927024859663,NA,0.217
+1038,"CGJ2852","26-Jul","26-Jul","","Hog",2,"Alchemilla alpina","Alchemilla",4,700,"","",26,NA,NA,"","",NA,NA,0.1583,0.0502,2.277,5.838,85.9883521754025,317.119393556538,0.204333333333333
+1039,"CFX9210","26-Jul","26-Jul","","Hog",2,"Alchemilla alpina","Alchemilla",6,700,"","",26,"1 thickness measurement",NA,"","",NA,NA,0.0826,0.02481,2.313,3.106,79.8776561493883,300.363196125908,0.1615
+1040,"CFL0071","26-Jul","26-Jul","","Hog",2,"Agrostis capillaris","Agrostis",1,700,"","",26,NA,NA,"","",NA,NA,0.1678,0.03895,1.383,10.794,36.0848619603483,232.121573301549,0.167666666666667
+1041,"CFO5208","27-Jul","27-Jul","","Joa",3,"Alchemilla alpina","Alchemilla",5,920,"","Incomplete curve",27,NA,NA,NA,NA,NA,NA,NA,NA,2.178,NA,NA,NA,0.183
+1042,"CFI3379","27-Jul","27-Jul","","Joa",3,"Agrostis capillaris","Agrostis",3,920,"","Incomplete curve; Auto ramp set to automatically re-run (i.e. ramp down Txch) and began ramping down temperature before match and log point could be taken",27,NA,NA,"","Incomplete curve; Auto ramp set to automatically re-run (i.e. ramp down Txch) and began ramping down temperature before match and log point could be taken",NA,NA,0.0671,NA,1.039,6.167,NA,NA,0.161333333333333
+1043,"CGM9442","27-Jul","27-Jul","","Joa",3,"Achillea millefolium","Achillea",6,920,"","Auto ramp set to automatically re-run (i.e. ramp down Txch) and began ramping down temperature before match and log point could be taken",27,NA,NA,"","Auto ramp set to automatically re-run (i.e. ramp down Txch) and began ramping down temperature before match and log point could be taken",NA,NA,0.2685,0.05383,1.576,10.338,52.070032888373,200.48417132216,0.172666666666667
+1044,"CHB4408","27-Jul","27-Jul","","Joa",3,"Achillea millefolium","Achillea",4,920,"","",27,NA,NA,"","",NA,NA,0.212,NA,1.954,8.306,NA,NA,0.32
+1045,"CHH3666","27-Jul","27-Jul","","Joa",3,"Achillea millefolium","Achillea",6,920,"","",27,NA,NA,"","",NA,NA,0.1289,NA,1.284,4.83,NA,NA,0.2135
+1046,"CDS1414","27-Jul","27-Jul","","Joa",3,"Achillea millefolium","Achillea",1,920,"","",27,NA,NA,"","",NA,NA,0.1744,NA,1.406,6.379,NA,NA,0.200666666666667
+1047,"CEQ6431","27-Jul","27-Jul","","Joa",3,"Vaccinium vitis-idaea","Vaccinium",4,920,"","",27,NA,NA,"","",NA,NA,0.0587,0.02321,1.404,1.733,133.929601846509,395.400340715503,0.4026
+1048,"CDT5638","27-Jul","27-Jul","","Joa",3,"Achillea millefolium","Achillea",6,920,"","",27,NA,NA,"","",NA,NA,0.1813,NA,1.738,6.564,NA,NA,0.2065
+1049,"CEE6701","27-Jul","27-Jul","","Joa",3,"Achillea millefolium","Achillea",1,920,"","",27,NA,NA,"","",NA,NA,0.209,NA,1.677,8.659,NA,NA,0.161833333333333
+1050,"CEA5871","27-Jul","27-Jul","","Joa",3,"Vaccinium vitis-idaea","Vaccinium",4,920,"","",27,NA,NA,"","",NA,NA,0.0697,NA,1.054,1.51,NA,NA,0.375666666666667
+1051,"CHP3428","27-Jul","27-Jul","","Joa",3,"Agrostis capillaris","Agrostis",6,920,"","",27,NA,NA,"","",NA,NA,0.1822,NA,0.838,7.271,NA,NA,0.160833333333333
+1052,"CHT5470","27-Jul","27-Jul","","Joa",3,"Alchemilla alpina","Alchemilla",1,920,"","",27,NA,NA,"","",NA,NA,0.0809,0.02407,2.801,4.204,57.2549952426261,297.527812113721,0.201166666666667
+1053,"DGF7346","27-Jul","28-Jul","","Joa",3,"Alchemilla alpina","Alchemilla",5,920,"","Measured on a day-old turf, Auto ramp set to automatically re-run (i.e. ramp down Txch) and began ramping down temperature before match and log point could be taken",27,"Li-cored on 28 of July",NA,"","Measured on a day-old turf, Auto ramp set to automatically re-run (i.e. ramp down Txch) and began ramping down temperature before match and log point could be taken","Li-cored on 28 of July",NA,0.133,NA,3.231,6.116,NA,NA,0.187333333333333
+1054,"DFS4548","27-Jul","28-Jul","","Joa",3,"Vaccinium vitis-idaea","Vaccinium",4,920,"","Measured on a day-old turf, Auto ramp set to automatically re-run (i.e. ramp down Txch) and began ramping down temperature before match and log point could be taken",27,"Li-cored on 28 of July",NA,"","Measured on a day-old turf, Auto ramp set to automatically re-run (i.e. ramp down Txch) and began ramping down temperature before match and log point could be taken","Li-cored on 28 of July",NA,0.0658,0.02468,1.859,1.971,125.21562658549,375.075987841945,0.3082
+1055,"AMB4745","28-Jul","28-Jul","Pennell","Joa",3,"Achillea millefolium","Achillea",3,920,"","Wrong light intensity. Was set to 280",28,NA,NA,"","Wrong light intensity. Was set to 280",NA,NA,0.0459,NA,0.756,2.09,NA,NA,0.1055
+1056,"DFK8267","28-Jul","28-Jul","1.Michaletz","Joa",3,"Agrostis capillaris","Agrostis",6,920,"","",28,NA,NA,"","",NA,NA,0.0436,0.01068,1.074,3.316,32.2074788902292,244.954128440367,0.160833333333333
+1057,"ALP7586","28-Jul","28-Jul","2.Michaletz","Joa",3,"Alchemilla alpina","Alchemilla",4,920,"","",28,NA,NA,"","",NA,NA,0.1509,NA,3.156,6.281,NA,NA,0.148833333333333
+1059,"AMK8006","28-Jul","28-Jul","1.Michaletz","Joa",3,"Vaccinium vitis-idaea","Vaccinium",6,920,"","",28,NA,NA,"","","small leaf only 2 thickness measurements",NA,0.0412,NA,0.907,1.249,NA,NA,0.3468
+1061,"DGA0392","28-Jul","28-Jul","1.Michaletz","Joa",3,"Achillea millefolium","Achillea",3,920,"","",28,NA,NA,"","",NA,NA,0.072,NA,1.095,3.163,NA,NA,0.184166666666667
+1062,"AMC8055","28-Jul","28-Jul","1.Michaletz","Joa",3,"Alchemilla alpina","Alchemilla",1,920,"","",28,NA,NA,"","",NA,NA,0.1014,NA,2.497,4.473,NA,NA,0.169166666666667
+1063,"AMH4957","28-Jul","28-Jul","2.Michaletz","Joa",3,"Vaccinium vitis-idaea","Vaccinium",2,920,"","",28,NA,NA,"","",NA,NA,0.0585,NA,1.159,1.537,NA,NA,0.412
+1064,"ALZ2013","28-Jul","28-Jul","Pennell","Joa",3,"Alchemilla alpina","Alchemilla",5,920,"","",28,NA,NA,"","",NA,NA,0.0815,NA,1.909,3.802,NA,NA,0.168333333333333
+1065,"DEL7397","28-Jul","28-Jul","1.Michaletz","Joa",3,"Vaccinium vitis-idaea","Vaccinium",4,920,"","Screen was glitching after run... either last one or two points logged are the 'match' point",28,NA,NA,"","Screen was glitching after run... either last one or two points logged are the 'match' point",NA,NA,0.0316,0.0105,1.216,1.355,77.4907749077491,332.278481012658,0.2315
+1066,"BFA4754","28-Jul","28-Jul","2.Michaletz","Joa",3,"Alchemilla alpina","Alchemilla",2,920,"","",28,NA,NA,"","",NA,NA,0.158,NA,2.669,6.243,NA,NA,0.167166666666667
+1067,"AMQ3000","28-Jul","28-Jul","1.Michaletz","Joa",3,"Agrostis capillaris","Agrostis",4,920,"","",28,NA,NA,"","",NA,NA,0.1452,0.03843,1.186,12.559,30.5995700294609,264.669421487603,0.153166666666667
+1068,"AME6564","28-Jul","28-Jul","2.Michaletz","Joa",3,"Alchemilla alpina","Alchemilla",2,920,"","",28,NA,NA,"","",NA,NA,0.1272,0.03759,2.49,5.754,65.3284671532847,295.518867924528,0.1825
+1069,"DFZ4338","28-Jul","28-Jul","Pennell","Joa",3,"Agrostis capillaris","Agrostis",6,920,"","",28,NA,NA,"","",NA,NA,0.0859,NA,1.208,6.468,NA,NA,0.153833333333333
+1070,"DFN1839","28-Jul","28-Jul","1.Michaletz","Joa",3,"Agrostis capillaris","Agrostis",4,920,"","",28,NA,NA,"","",NA,NA,0.1276,0.0338,1.342,10.897,31.0177112966872,264.890282131661,0.155333333333333
+1071,"DFQ3002","28-Jul","28-Jul","2.Michaletz","Joa",3,"Agrostis capillaris","Agrostis",2,920,"","",28,NA,NA,"","",NA,NA,0.1292,0.0356,1.445,9.638,36.9371238846234,275.541795665635,0.175333333333333
+1072,"DFU3220","28-Jul","28-Jul","Pennell","Joa",3,"Agrostis capillaris","Agrostis",1,920,"","",28,NA,NA,"","",NA,NA,0.075,NA,1.193,6.701,NA,NA,0.146666666666667
+1073,"DEF2910","30-Jul","30-Jul","2.Michaletz","Hog",2,"Agrostis capillaris","Agrostis",2,700,"","",30,NA,NA,"","","2 leaves",NA,0.0644,NA,0.813,4.972,NA,NA,0.164666666666667
+1074,"DEC0656","30-Jul","30-Jul","1.Michaletz","Hog",2,"Agrostis capillaris","Agrostis",3,700,"","",30,"2 leaves, Dec0656",NA,"","",NA,NA,0.0828,NA,0.853,6.546,NA,NA,0.162
+1075,"DDY9866","30-Jul","30-Jul","Pennell","Hog",2,"Alchemilla alpina","Alchemilla",1,700,"","",30,NA,NA,"","",NA,NA,0.1094,NA,2.209,4.915,NA,NA,0.271666666666667
+1076,"DFI0319","30-Jul","30-Jul","2.Michaletz","Hog",2,"Agrostis capillaris","Agrostis",2,700,"","",30,NA,NA,"","",NA,NA,0.1585,NA,1.776,12.034,NA,NA,0.167166666666667
+1077,"DDN6255","30-Jul","30-Jul","1.Michaletz","Hog",2,"Agrostis capillaris","Agrostis",3,700,"","",30,NA,NA,"","","4 leaves",NA,0.1661,NA,2.122,12.746,NA,NA,0.185
+1078,"DDU8149","30-Jul","30-Jul","Pennell","Hog",2,"Alchemilla alpina","Alchemilla",1,700,"","",30,NA,NA,"","",NA,NA,0.1403,NA,2.533,5.985,NA,NA,0.201
+1079,"DFP6691","30-Jul","30-Jul","1.Michaletz","Hog",2,"Achillea millefolium","Achillea",3,700,"","light setting incorrect",30,NA,NA,"","light setting incorrect",NA,NA,0.3406,NA,2.308,10.487,NA,NA,0.209166666666667
+1080,"DFE5646","30-Jul","30-Jul","Pennell","Hog",2,"Alchemilla alpina","Alchemilla",1,700,"","",30,NA,NA,"","",NA,NA,0.1211,NA,1.999,5.378,NA,NA,0.198166666666667
+1082,"DGR1367","30-Jul","30-Jul","1.Michaletz","Hog",2,"Achillea millefolium","Achillea",1,700,"Presentation","in the LRC folder",30,NA,NA,"Presentation","in the LRC folder",NA,NA,0.1804,NA,NA,NA,NA,NA,0.220666666666667
+1083,"EDB0301","30-Jul","30-Jul","Pennell","Hog",2,"Achillea millefolium","Achillea",4,700,"","",30,NA,NA,"","",NA,NA,0.0914,NA,1.208,4.218,NA,NA,0.224666666666667
+1086,"GLE4675","30-Jul","30-Jul","1.Michaletz","Hog",2,"Alchemilla alpina","Alchemilla",1,700,"Dinner","was labelled as 1083",30,NA,NA,"Dinner","was labelled as 1083",NA,NA,0.1165,NA,2.311,5.122,NA,NA,0.177333333333333
+1087,"DGN9689","30-Jul","30-Jul","Pennell","Hog",2,"Achillea millefolium","Achillea",4,700,"Presentation","was labelled as 1082",30,NA,NA,"Presentation","was labelled as 1082",NA,NA,0.9662,NA,2.44,10.842,NA,NA,0.218
+1090,"HHR6603","30-Jul","30-Jul","Pennell","Hog",2,"Achillea millefolium","Achillea",4,700,"Dinner","",30,NA,NA,"Dinner","",NA,NA,0.28474,NA,2.47,10.884,NA,NA,0.326666666666667
+1091,"DGD4511","30-Jul","31-Jul","1.Michaletz","Vik",1,"Achillea millefolium","Achillea",4,469,"","not logging all intervals; ok",30,NA,NA,"","not logging all intervals; ok",NA,NA,0.2416,NA,1.592,7.697,NA,NA,0.370666666666667
+1092,"DZE5962","30-Jul","31-Jul","Pennell","Vik",1,"Alchemilla alpina","Alchemilla",6,469,"","not logging all intervals; ok",30,NA,NA,"","not logging all intervals; ok",NA,NA,0.5226,NA,2.078,4.882,NA,NA,0.1965
+1093,"DYH3988","30-Jul","31-Jul","2.michaletz","Hog",2,"Achillea millefolium","Achillea",4,700,"oscillation","not logging all intervals; x",30,NA,NA,"oscillation","not logging all intervals; x",NA,NA,0.1326,NA,2.135,5.714,NA,NA,0.2185
+1094,"DDT5815","30-Jul","31-Jul","Pennell","Vik",1,"Alchemilla alpina","Alchemilla",6,469,"","ok",30,NA,NA,"","ok",NA,NA,0.1196,NA,2.015,6.054,NA,NA,0.148333333333333
+1095,"DDX6286","30-Jul","31-Jul","2.michaletz","Hog",2,"Achillea millefolium","Achillea",4,700,"","ok",30,NA,NA,"","ok","plant height coloumn said 0.105 -  don't know wher that number came from... probably a weight",NA,0.0671,NA,2.155,6.027,NA,NA,0.199833333333333
+1096,"DDQ6934","31-Jul","31-Jul","1.Michaletz","Lia",4,"Alchemilla alpina","Alchemilla",5,1290,"","x",31,NA,NA,"","x",NA,NA,0.1054,NA,2.388,3.885,NA,NA,0.193166666666667
+1097,"DGV8351","31-Jul","31-Jul","Pennell","Lia",4,"Vaccinium vitis-idaea","Vaccinium",8,1290,"","ok",31,NA,NA,"","ok","only one thickness",NA,0.0362,NA,0.804,0.943,NA,NA,0.44925
+1098,"DYM6728","31-Jul","31-Jul","2.michaletz","Lia",4,"Achillea millefolium","Achillea",6,1290,"","ok",31,NA,NA,"","ok",NA,NA,0.1247,NA,1.51,5.378,NA,NA,0.205666666666667
+1099,"DGM8171","31-Jul","31-Jul","1.michaletz","Lia",4,"Alchemilla alpina","Alchemilla",5,1290,"","x",31,NA,NA,"","x",NA,NA,0.084,NA,2.619,3.923,NA,NA,0.1865
+1100,"DEK5567","31-Jul","31-Jul","2.michaletz","Lia",4,"Achillea millefolium","Achillea",6,1290,"","ok",31,NA,NA,"","ok","Was incorrectly labeled as cut!",NA,0.2174,NA,2.152,7.214,NA,NA,0.235166666666667
+1101,"DGQ5802","31-Jul","31-Jul","Pennell","Lia",4,"Vaccinium vitis-idaea","Vaccinium",7,1290,"","ok",31,NA,NA,"","ok","only 1 thickness",NA,0.0442,0.02258,0.884,1.014,222.682445759369,510.859728506787,0.442
+1102,"DYE3784","31-Jul","31-Jul","1.Michaletz","Hog",2,"Achillea millefolium","Achillea",1,700,"","medium",31,NA,NA,"","medium",NA,NA,0.1663,NA,1.965,6.704,NA,NA,0.179266666666667
+1103,"FWO5296","31-Jul","31-Jul","2.Michaletz","Lia",4,"Achillea millefolium","Achillea",6,1290,"","x",31,NA,NA,"","x",NA,NA,0.0586,NA,0.821,2.518,NA,NA,0.1716
+1104,"FWN1421","31-Jul","31-Jul","Pennell","Lia",4,"Vaccinium vitis-idaea","Vaccinium",7,1290,"","ok",31,NA,NA,"","ok","no mass or thickness",NA,0.0432,NA,0.968,0.987,NA,NA,0.524
+1105,"FWQ5206","31-Jul","31-Jul","1.Michaletz","Lia",4,"Achillea millefolium","Achillea",5,1290,"","ok",31,NA,NA,"","ok",NA,"scanned? box not ticked",0.0982,NA,1.116,2.839,NA,NA,0.269216666666667
+1106,"FWI8458","31-Jul","31-Jul","Pennell","Lia",4,"Vaccinium vitis-idaea","Vaccinium",7,1290,"","ok",1,NA,NA,"","ok",NA,NA,0.0492,NA,0.744,1.064,NA,NA,0.4482
+1107,"FWR1052","31-Jul","31-Jul","2.Michaletz","Lia",4,"Vaccinium vitis-idaea","Vaccinium",8,1290,"","x",31,NA,NA,NA,NA,NA,NA,NA,NA,0.697,NA,NA,NA,0.4595
+1108,"DJB7335","31-Jul","31-Jul","Pennell","Lia",4,"Vaccinium vitis-idaea","Vaccinium",7,1290,"","x",31,NA,NA,"","x",NA,NA,0.0538,NA,1.152,1.339,NA,NA,0.465325
+1109,"EGT5033","31-Jul","31-Jul","1.michaletz","Lia",4,"Achillea millefolium","Achillea",5,1290,"","ok",31,NA,NA,"","ok",NA,NA,0.0736,NA,0.918,2.478,NA,NA,0.1735
+1112,"FYF1114","30-Jul","31-Jul","2.michaletz","Hog",2,"Alchemilla alpina","Alchemilla",1,700,"PAR set wrong - too high so should still be saturating - 359","ok",30,NA,NA,"PAR set wrong - too high so should still be saturating - 359","ok",NA,NA,0.1182,NA,2.388,5.1,NA,NA,0.196666666666667
+1113,"FYZ0405","31-Jul","31-Jul","1.michaletz","Lia",4,"Alchemilla alpina","Alchemilla",5,1290,"PAR set wrong - too high so should still be saturating - 359","ok",1,NA,NA,"PAR set wrong - too high so should still be saturating - 359","ok",NA,NA,0.0559,NA,1.775,2.532,NA,NA,0.202166666666667
+1114,"FWE6819","30-Jul","31-Jul","Pennell","Hog",2,"Achillea millefolium","Achillea",4,700,"","",30,"Li-cored of July 31st",NA,"","","no thickness measures, Li-cored of July 31st",NA,0.125,NA,1.6,5.507,NA,NA,0.2345
+1115,"EDA5914","30-Jul","31-Jul","2.michaletz","Hog",2,"Alchemilla alpina","Alchemilla",1,700,"","",30,NA,NA,"","",NA,NA,0.121,NA,2.783,4.866,NA,NA,0.1885
+1116,"DYJ1799","30-Jul","31-Jul","1.michaletz","Lia",4,"Alchemilla alpina","Alchemilla",5,1290,"","",31,NA,NA,"","",NA,NA,0.0692,0.02344,1.927,3.085,75.9805510534846,338.728323699422,0.198833333333333
+1117,"FXL3728","30-Jul","31-Jul","Pennell","Hog",2,"Achillea millefolium","Achillea",4,700,"","",30,NA,NA,"","",NA,NA,0.1102,NA,1.205,4.656,NA,NA,0.226666666666667
+1118,"FYJ3242","30-Jul","31-Jul","2.michaletz","Hog",2,"Alchemilla alpina","Alchemilla",1,700,"","",30,NA,NA,"","",NA,NA,0.1329,NA,1.022,5.222,NA,NA,0.185
+1119,"FXX0264","31-Jul","31-Jul","1.michaletz","Lia",4,"Alchemilla alpina","Alchemilla",5,1290,"","",31,NA,NA,"","",NA,NA,0.0659,NA,1.865,2.921,NA,NA,0.169666666666667
+1120,"FYY0945","31-Jul","1-Aug","1.michaletz","Lia",4,"Vaccinium vitis-idaea","Vaccinium",8,1290,"","good",31,"missing third thickness",NA,"","good",NA,NA,0.0166,0.0162,0.43,0.512,316.40625,975.903614457831,0.2905
+1121,"FYM7654","30-Jul","1-Aug","Pennell","Hog",2,"Alchemilla alpina","Alchemilla",1,700,"","good",30,NA,NA,"","good",NA,NA,0.0767,NA,1.868,2.727,NA,NA,0.174666666666667
+1122,"FYU7403","31-Jul","1-Aug","2.Michaletz","Lia",4,"Alchemilla alpina","Alchemilla",5,1290,"","good",31,NA,NA,"","good",NA,NA,0.0535,NA,2.206,2.667,NA,NA,0.1436
+1123,"FYE2594","31-Jul","1-Aug","1.Michaletz","Lia",4,"Vaccinium vitis-idaea","Vaccinium",8,1290,"","good",31,NA,NA,"","good",NA,NA,0.026,NA,0.582,0.605,NA,NA,0.442
+1124,"DPD4519","30-Jul","1-Aug","Pennell","Hog",2,"Alchemilla alpina","Alchemilla",1,700,"","good",30,NA,NA,"","good","missing third thickness",NA,0.0802,NA,2.183,3.263,NA,NA,0.181
+1125,"FXS2644","31-Jul","1-Aug","2.Michaletz","Lia",4,"Alchemilla alpina","Alchemilla",5,1290,"","good",31,NA,NA,"","good",NA,NA,0.0721,NA,2.371,3.052,NA,NA,0.151333333333333
+1126,"FYG3887","31-Jul","1-Aug","1.Michaletz","Lia",4,"Achillea millefolium","Achillea",10,1290,"","good",31,NA,NA,"","good",NA,NA,0.1085,NA,1.57,5.124,NA,NA,0.203333333333333
+1127,"ECK3340","31-Jul","1-Aug","2.Michaletz","Lia",4,"Alchemilla alpina","Alchemilla",5,1290,"","good",31,NA,NA,"","good",NA,NA,0.0714,NA,1.745,2.892,NA,NA,0.188166666666667
+1128,"ECL1902","30-Jul","1-Aug","Pennell","Hog",2,"Achillea millefolium","Achillea",1,700,"","good",30,NA,NA,"","good",NA,NA,0.0794,NA,0.731,3.166,NA,NA,0.198666666666667
+1129,"HTZ0730","1-Aug","1-Aug","1.Michaletz","Vik",1,"Alchemilla alpina","Alchemilla",4,469,"","mediocre",1,NA,NA,"","mediocre",NA,NA,0.0563,NA,1.922,2.615,NA,NA,0.191
+1130,"HUA5840","1-Aug","1-Aug","2.Michaletz","Vik",1,"Alchemilla alpina","Alchemilla",5,469,"","mediocre",1,NA,NA,"","mediocre",NA,NA,0.1253,NA,2.257,6.205,NA,NA,0.204833333333333
+1131,"HUE5549","1-Aug","1-Aug","Pennell","Vik",1,"Alchemilla alpina","Alchemilla",2,469,"","good",1,NA,NA,"","good",NA,NA,0.1128,NA,1.672,4.795,NA,NA,0.188833333333333
+1132,"HUU2825","1-Aug","1-Aug","1.Michaletz","Vik",1,"Vaccinium vitis-idaea","Vaccinium",6,469,"","good",1,NA,NA,"","good",NA,NA,0.0256,NA,0.676,0.781,NA,NA,0.3835
+1133,"HUR3076","1-Aug","1-Aug","2.Michaletz","Vik",1,"Achillea millefolium","Achillea",5,469,"","",1,NA,NA,"","","Check leaf thickness",NA,0.1698,NA,1.577,6.441,NA,NA,0.233
+1134,"HTO9877","1-Aug","1-Aug","Pennell","Vik",1,"Achillea millefolium","Achillea",2,469,"","bad",1,NA,NA,"","bad",NA,NA,0.2284,NA,1.74,7.339,NA,NA,0.238333333333333
+1135,"IAW7113","1-Aug","1-Aug","1.Michaletz","Vik",1,"Vaccinium vitis-idaea","Vaccinium",6,469,"","",1,NA,NA,NA,NA,NA,NA,NA,NA,0.788,NA,NA,NA,0.31
+1136,"ICA4814","1-Aug","1-Aug","Pennell","Vik",1,"Achillea millefolium","Achillea",2,469,"bad","Not in AT folder. Floating on Li-Cor",1,NA,NA,"bad","Not in AT folder. Floating on Li-Cor",NA,NA,0.2087,NA,1.114,8.612,NA,NA,0.245666666666667
+1137,"IAY3939","1-Aug","1-Aug","1.Michaletz","Vik",1,"Vaccinium vitis-idaea","Vaccinium",6,469,"","Not in AT folder. Floating on Li-Cor",1,NA,NA,"","Not in AT folder. Floating on Li-Cor",NA,NA,0.0257,NA,0.512,0.64,NA,NA,0.39825
+1138,"IBB3085","1-Aug","1-Aug","2.michaletz","Vik",1,"Achillea millefolium","Achillea",4,469,"","ok-medium",1,NA,NA,"","ok-medium",NA,NA,0.1504,NA,1.524,5.349,NA,NA,0.303
+1139,"IAZ3666","1-Aug","1-Aug","Pennell","Vik",1,"Achillea millefolium","Achillea",5,469,"","ok-medium",1,NA,NA,"","ok-medium",NA,NA,0.2509,NA,2.01,8.069,NA,NA,0.26925
+1140,"IBK6370","1-Aug","1-Aug","1.michaletz","Vik",1,"Achillea millefolium","Achillea",2,469,"","bad-wavy",1,NA,NA,"","bad-wavy",NA,NA,0.3451,NA,2.444,12.348,NA,NA,0.15975
+1141,"IBF8795","1-Aug","1-Aug","Pennell","Vik",1,"Alchemilla alpina","Alchemilla",5,469,"","ok",1,NA,NA,"","ok",NA,NA,0.1032,NA,1.975,4.885,NA,NA,0.196666666666667
+1142,"IBI2022","1-Aug","1-Aug","2.michaletz","Vik",1,"Alchemilla alpina","Alchemilla",4,469,"","ok",1,NA,NA,"","ok","only one thickness measure",NA,0.0899,NA,2.173,4.177,NA,NA,0.20425
+1143,"IBJ4387","1-Aug","1-Aug","Pennell","Vik",1,"Achillea millefolium","Achillea",5,469,"","",1,NA,NA,"","",NA,NA,0.1357,NA,1.205,5.437,NA,NA,0.2755
+1145,"IBE7234","1-Aug","1-Aug","1.michaletz","Vik",1,"Achillea millefolium","Achillea",2,469,"","",1,NA,NA,"","",NA,NA,0.2123,NA,1.969,7.745,NA,NA,0.2455
+1146,"IAT1002","1-Aug","1-Aug","Pennell","Vik",1,"Alchemilla alpina","Alchemilla",5,469,"Good","Originally named 1300",1,NA,NA,"Good","Originally named 1300",NA,NA,0.135,NA,1.951,5.001,NA,NA,0.203333333333333
+1147,"IAV4852","1-Aug","1-Aug","1.michaletz","Joa",3,"Alchemilla alpina","Alchemilla",1,920,"Good","Originally named 1301",1,NA,NA,"Good","Originally named 1301",NA,NA,0.1522,NA,2.021,4.947,NA,NA,0.21025
+1148,"IAR6883","1-Aug","1-Aug","2.michaletz","Vik",1,"Achillea millefolium","Achillea",7,469,"Good","Originally named 1402",1,NA,NA,"Good","Originally named 1402",NA,NA,0.4371,NA,2.693,15.097,NA,NA,0.265166666666667
+1149,"HOG6557","1-Aug","2-Aug","1.michaletz","Joa",3,"Alchemilla alpina","Alchemilla",1,920,"Good","",1,NA,NA,"Good","",NA,NA,0.1041,NA,1.396,4.448,NA,NA,0.206
+1150,"HOD1140","1-Aug","2-Aug","2.michaletz","Joa",3,"Achillea millefolium","Achillea",3,920,"Good","",1,NA,NA,"Good","",NA,NA,0.2312,NA,1.628,8.262,NA,NA,0.23075
+1151,"HOU0035","1-Aug","2-Aug","Pennell","Joa",3,"Vaccinium vitis-idaea","Vaccinium",2,920,"Good","",1,NA,NA,"Good","",NA,NA,0.0427,NA,1.167,1.538,NA,NA,0.29575
+1152,"HNW9314","1-Aug","2-Aug","1.michaletz","Joa",3,"Vaccinium vitis-idaea","Vaccinium",1,920,"","Had a small amount of grass within the chamber (Avenella)",1,NA,NA,"","Had a small amount of grass within the chamber (Avenella)",NA,NA,0.0494,NA,1.206,1.742,NA,NA,0.3402
+1153,"HOE6556","1-Aug","2-Aug","Pennell","Joa",3,"Alchemilla alpina","Alchemilla",2,920,"","",1,NA,NA,"","",NA,NA,0.0984,NA,2.237,4.409,NA,NA,0.154
+1154,"IMV8895","1-Aug","2-Aug","1.michaletz","Joa",3,"Alchemilla alpina","Alchemilla",1,920,"","",1,NA,NA,"","",NA,NA,0.1102,NA,2.005,5.06,NA,NA,0.169666666666667
+1155,"IMR6273","1-Aug","2-Aug","Pennell","Joa",3,"Vaccinium vitis-idaea","Vaccinium",2,920,"","",1,NA,NA,"","",NA,NA,0.0497,NA,1.266,1.585,NA,NA,0.3885
+1157,"HNS9971","1-Aug","2-Aug","Pennell","Joa",3,"Achillea millefolium","Achillea",3,920,"Good","",1,NA,NA,"Good","","Check wet mass",NA,0.3749,NA,1.991,12.782,NA,NA,0.25275
+1158,"ETQ0462","1-Aug","2-Aug","2.Michaletz","Vik",1,"Achillea millefolium","Achillea",7,469,"Good","",1,NA,NA,"Good","","only one thickness measure",NA,0.3257,NA,1.882,11.048,NA,NA,0.263333333333333
+1159,"ETN4156","1-Aug","2-Aug","1.Michaletz","Joa",3,"Achillea millefolium","Achillea",4,920,"Good","",1,NA,NA,"Good","","only one thickness measure",NA,0.2892,NA,2.081,11.47,NA,NA,0.226
+1160,"ETO5874","1-Aug","2-Aug","Pennell","Joa",3,"Achillea millefolium","Achillea",6,920,"Good","",1,NA,NA,"Good","","only one thickness measure",NA,0.3001,NA,1.995,11.423,NA,NA,0.254666666666667
+1161,"ETH6232","1-Aug","2-Aug","1.Michaletz","Vik",1,"Achillea millefolium","Achillea",5,469,"Good","",1,NA,NA,"Good","",NA,NA,0.1418,NA,0.808,5.765,NA,NA,0.230666666666667
+1162,"ETL3413","31-Jul","2-Aug","2.Michaletz","Lia",4,"Alchemilla alpina","Alchemilla",5,1290,"Mediocre curve. Matched, then cut plant, and then immediately added point all within a minute. JCG thought the cutting probably wouldn't affect the point.","",31,NA,NA,"Mediocre curve. Matched, then cut plant, and then immediately added point all within a minute. JCG thought the cutting probably wouldn't affect the point.","","only one thickness measure",NA,0.1099,NA,2.477,5.149,NA,NA,0.197333333333333
+1163,"ETD5352","31-Jul","3-Aug","2.Michaletz","Lia",4,"Alchemilla alpina","Alchemilla",5,1290,"","",31,NA,NA,"","",NA,NA,0.0697,NA,2.036,3.274,NA,NA,0.154733333333333
+1800,"ETM1024","1-Aug","2-Aug","Pennell","Joa",3,"Deschampsia cespitosa","Deschampsia",6,920,"Good","",1,NA,NA,"Good","",NA,NA,0.4072,NA,1.297,18,NA,NA,0.231333333333333
+1801,"ETF1336","1-Aug","2-Aug","1.Michaletz","Joa",3,"Deschampsia cespitosa","Deschampsia",4,920,"Good","",1,NA,NA,"Good","","only one thickness measure",NA,0.1475,NA,0.542,6.432,NA,NA,0.270333333333333
