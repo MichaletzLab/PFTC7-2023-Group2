@@ -104,3 +104,36 @@ species_summary <- dat %>%
   group_by(mod_group) %>%
   summarize(unique_species = n_distinct(fspecies))
 dat <- dat %>% mutate(mg = factor(paste(species,rep,leaf)))
+
+###############
+###############
+## Theme ============
+fn_theme <- function (base_size = 12, base_family = "", base_line_size = base_size/22, 
+                      base_rect_size = base_size/24){
+  half_line <- base_size/2
+  theme_bw(base_size = base_size, base_family = base_family, 
+           base_line_size = base_line_size, base_rect_size = base_rect_size) %+replace% 
+    theme(axis.text = element_text(colour = "black", size = rel(1)),
+          axis.text.x = element_text(margin = margin(5,0,0,0)), 
+          axis.text.y = element_text(margin = margin(0,5,0,0)),
+          axis.ticks = element_line(colour = "black", 
+                                    linewidth = rel(0.5)),
+          axis.ticks.length = unit(-0.1,'cm'),
+          panel.border = element_rect(fill = NA, colour = "black", 
+                                      linewidth = rel(1)), panel.grid = element_line(colour = "black"), 
+          panel.grid.major = element_blank(), #element_line(linewidth = rel(0.1)), 
+          panel.grid.minor = element_blank(), #element_line(linewidth = rel(0.05)), 
+          strip.background = element_rect(fill = "transparent",
+                                          color = 'transparent'), 
+          strip.text = element_text(colour = "black", size = rel(0.9), 
+                                    margin = margin(0.8 * half_line, 0.8 * half_line, 
+                                                    0.8 * half_line, 0.8 * half_line)), 
+          legend.position = c(1,1),
+          legend.justification = c(1,1),
+          # legend.direction = 'vertical',
+          legend.background =  element_rect(fill='transparent', 
+                                            color='transparent'),
+          legend.text = element_text(size = rel(0.9),lineheight = 1),
+          legend.spacing.y = unit(0.01, 'cm'),
+          complete = TRUE)
+}
