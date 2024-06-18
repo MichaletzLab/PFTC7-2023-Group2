@@ -12,97 +12,9 @@
 #
 # ====================================================
 
-
-# Libraries
-library(dplyr)
-library(tidyverse)
-library(ggplot2)
-library(stringr)
-library(nls.multstart)
-library(nlstools)
-library(data.table)
-library(mgcv)
-library(mgcViz)
-library(gratia)
-library(patchwork)
-library(pacman)
-library(data.table)
-
-pacman::p_load(tidyverse,data.table,
-               mgcv,mgcViz,
-               gratia,
-               patchwork) 
-
-# Data import =================================
-dat <- read_delim("./raw.discardHooks_data.csv", delim=",") %>% 
-  setDT()
-
-weibull.topts.disc <- read.csv("discard.weibull.SANW.csv")
-weibull.topts.disc <- weibull.topts.disc %>%
-  select(curveID, T_opt)
-#=============================================
-Faster_Key = read.csv("Faster_Key.csv")%>%
-  rename(curveID = Obs)
-norway_key = read.csv("trait.data.with.area.csv")
-dat <- left_join(dat, Faster_Key, by = "curveID")
-dat<-left_join(dat,norway_key,by="curveID")
-dat <- left_join(dat, weibull.topts.disc, by = "curveID")
-dat <- dat %>%
-  select(Date.y, curveID,site.x,site.y, Elevation.masl,Elevation.y, T_opt,Species.y,taxon, Individual.y, BarcodeLeaf.y, hhmmss, Tleaf, A, gsw, Ci, Ca, Emm, VPDleaf, Tair, CO2_r, CO2_s)%>%
-  mutate(Elevation = ifelse(is.na(Elevation.y), Elevation.masl, Elevation.y)) %>%
-  mutate(site.y = site.y + 5)%>%
-  mutate(site = ifelse(is.na(site.x), site.y, site.x))%>%
-  mutate(Species = ifelse(is.na(Species.y), taxon, Species.y))%>%
-  select(Date.y, curveID,site, Elevation, T_opt,Species, Individual.y, BarcodeLeaf.y, hhmmss, Tleaf, A, gsw, Ci, Ca, Emm, VPDleaf, Tair, CO2_r, CO2_s)
-
-
-dat <- as.data.table(dat)
-dat[is.na(Species), Species := "hypoxis_costata"]
-# Rename columns in Dat to remain consistent with program script
-names(dat) <- c(
-  "date", "curveID","site", "elevation","weib.Topt", "species", "rep", "leaf", "time", "tleaf", "photo",
-  "cond", "ci", "ca", "trmmol", "vpdl", "tair", "co2r", "co2s"
-)
-
-# add this because it's important for filtering
-dat$cica <- dat$ci / dat$ca
-
-names(dat) <- tolower(names(dat))
-dat[,`:=`(species = str_replace(species,"[:space:]"," "))]
-dat <- dat %>% 
-  filter(!is.na(vpdl)) %>% 
-  filter(cica %between% c(0.05,1.2))%>% 
-  filter(abs(cond) < 0.8) 
-
-dat <- dat %>% mutate(fspecies = factor(species),
-                      fsite = factor(site))
-
-vec_tleaf <- range(dat$tleaf,na.rm=T)
-vec_vpdl <- range(dat$vpdl,na.rm=T)
-dat[, `:=`(
-  log_vpdl = log(vpdl), 
-  tleaf_c = scale(tleaf, scale = FALSE)[, 1], 
-  vpdl_c = scale(vpdl, scale = FALSE)[, 1]
-)]
-
-dat[,`:=`(mod_group = paste0(site))]
-dat[, species := str_trim(species)]
-dat[, species := tolower(species)]
-
-ref_dat <- dat[,.(photo_u = mean(photo,na.rm=T), 
-                  photo_sd = sd(photo)),by=species]
-dat <- merge(dat, ref_dat, by = 'species', all.x = TRUE)
-dat[,`:=`(photo_rel = (photo - photo_u)/photo_u, 
-          photo_z = (photo - photo_u)/photo_sd)]
-
+#Start by running the file: configure.datfile.R 
 
 # Sub models ===============================================
-vec_mod_group <- unique(dat$mod_group)
-
-species_summary <- dat %>%
-  group_by(mod_group) %>%
-  summarize(unique_species = n_distinct(fspecies))
-
 vv <- vec_mod_group %>% 
   lapply(., FUN = function(sel_group){
     tmp_dat <- dat[mod_group ==sel_group]
@@ -230,9 +142,8 @@ p1 <- vv2 %>%
                             m**-2, s**-1,")")),
        # x = expression(paste(T[leaf]~"(°C)"))
        x = "VPD (kPa)") +
-  fn_theme()+
+  fn_theme() +
   theme(legend.position = 'none'); p1
-
 
 p2 <- ww2 %>% 
   mutate(site = factor(site,
@@ -262,7 +173,6 @@ p2 <- ww2 %>%
    scale_fill_manual(values = c("#33BBEE", "#009988","#117733", "#EE7733", "#CC3311","#882255","#AA4499","#332288","#0077BB") %>% rev()) +
   fn_theme() + theme(legend.position = "bottom"); p2
 
-
 p_out <- (p1|p2) + plot_annotation(tag_levels = 'a', 
                                    tag_prefix = '(',
                                    tag_suffix = ')')
@@ -272,7 +182,7 @@ p_out
 
 ggsave(p_out,
        filename=
-         paste0("figures/plot_photo_gs_site_tv_with-re_vpd-effect","_",
+         paste0("pftc7_vpd_analysis/figures/plot_photo_gs_site_tv_with-re_vpd-effect","_",
                 Sys.Date(),
                 ".png"),
        width=22,

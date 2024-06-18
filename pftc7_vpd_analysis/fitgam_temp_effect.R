@@ -12,109 +12,6 @@
 #
 # ====================================================
 
-# Libraries
-library(dplyr)
-library(tidyverse)
-library(ggplot2)
-library(stringr)
-library(nls.multstart)
-library(nlstools)
-library(data.table)
-library(mgcv)
-library(mgcViz)
-library(gratia)
-library(patchwork)
-library(pacman)
-library(data.table)
-
-pacman::p_load(tidyverse,data.table,mgcv,mgcViz,
-               gratia,
-               patchwork, 
-               nls.multstart)
-
-# Data import =================================
-dat <- read_delim("./raw.discardHooks_data.csv", delim=",") %>% 
-  setDT()
-
-weibull.topts.disc <- read.csv("discard.weibull.SANW.csv")
-weibull.topts.disc <- weibull.topts.disc %>%
-  select(curveID, T_opt)
-
-#Data for hooks ==============================
-weibull.cuthooks <- read.csv("weibull.cut.hooks.csv")
-weibull.cuthooks <- weibull.cuthooks %>%
-  select(curveID, T_opt)
-
-onlyhooks <- anti_join(weibull.cuthooks, weibull.topts.disc, by = "curveID") %>%
-  select(curveID)
-
-hooks <- read.csv("rawData.at.subset2.csv")
-raw.hooks <- semi_join(hooks, onlyhooks, by = "curveID")
-
-dat = hooks
-#=============================================
-Faster_Key = read.csv("Faster_Key.csv")%>%
-  rename(curveID = Obs)
-norway_key = read.csv("trait.data.with.area.csv")
-dat <- left_join(dat, Faster_Key, by = "curveID")
-dat<-left_join(dat,norway_key,by="curveID")
-dat <- left_join(dat, weibull.topts.disc, by = "curveID")
-dat <- dat %>%
-  select(Date.y, curveID,site.x,site.y, Elevation.masl,Elevation.y, T_opt,Species.y,taxon, Individual.y, BarcodeLeaf.y, hhmmss, Tleaf, A, gsw, Ci, Ca, Emm, VPDleaf, Tair, CO2_r, CO2_s)%>%
-  mutate(Elevation = ifelse(is.na(Elevation.y), Elevation.masl, Elevation.y)) %>%
-  mutate(site.y = site.y + 5)%>%
-  mutate(site = ifelse(is.na(site.x), site.y, site.x))%>%
-  mutate(Species = ifelse(is.na(Species.y), taxon, Species.y))%>%
-  select(Date.y, curveID,site, Elevation, T_opt,Species, Individual.y, BarcodeLeaf.y, hhmmss, Tleaf, A, gsw, Ci, Ca, Emm, VPDleaf, Tair, CO2_r, CO2_s)
-
-
-dat <- as.data.table(dat)
-dat[is.na(Species), Species := "hypoxis_costata"]
-# Rename columns in Dat to remain consistent with program script
-names(dat) <- c(
-  "date", "curveID","site", "elevation","weib.Topt", "species", "rep", "leaf", "time", "tleaf", "photo",
-  "cond", "ci", "ca", "trmmol", "vpdl", "tair", "co2r", "co2s"
-)
-
-# add this because it's important for filtering
-dat$cica <- dat$ci / dat$ca
-
-names(dat) <- tolower(names(dat))
-dat[,`:=`(species = str_replace(species,"[:space:]"," "))]
-dat <- dat %>% 
-  filter(!is.na(vpdl)) %>% 
-  filter(cica %between% c(0.05,1.2))%>% 
-  filter(abs(cond) < 0.8) 
-
-dat <- dat %>% mutate(fspecies = factor(species),
-                      fsite = factor(site))
-                      #fform = factor(form))
-
-vec_tleaf <- range(dat$tleaf,na.rm=T)
-vec_vpdl <- range(dat$vpdl,na.rm=T)
-
-dat$vpdl = as.numeric(dat$vpdl)
-dat$tleaf = as.numeric(dat$tleaf)
-setDT(dat)
-
-# Create new columns
-dat[, `:=`(
-  log_vpdl = log(vpdl), 
-  tleaf_c = scale(tleaf, scale = FALSE)[, 1], 
-  vpdl_c = scale(vpdl, scale = FALSE)[, 1]
-)]
-
-dat[,`:=`(mod_group = paste0(site))]
-
-ref_dat <- dat[,.(photo_u = mean(photo,na.rm=T), 
-                  photo_sd = sd(photo)),by=species]
-dat <- merge(dat,ref_dat,by='species')
-dat[,`:=`(photo_rel = (photo - photo_u)/photo_u, 
-          photo_z = (photo - photo_u)/photo_sd)]
-
-# fdoy= factor(doy)
-dat <- dat %>% mutate(mg = factor(paste(species,rep,leaf)))
-
 # # Fit a 2D kernel density ===============================
 # mat <- cbind(dat$tleaf,dat$vpdl)
 # bins <- KernSmooth::bkde2D(mat, bandwidth = c(0.25,0.25), gridsize = c(50L, 50L))
@@ -141,9 +38,6 @@ dat <- dat %>% mutate(mg = factor(paste(species,rep,leaf)))
 
 
 # Sub models ===============================================
-vec_mod_group <- unique(dat$mod_group)
-
-
 vv <- vec_mod_group %>% 
   lapply(., FUN = function(sel_group){
     ## only factors and random effects that notably improved AIC
@@ -542,7 +436,7 @@ p_out <- (p_photo|p_cond) +
 #Make sure to call it figures/HOOKSvpd_and_tleaf","_temperature-effect_ 
 ggsave(p_out, 
        filename=
-         paste0("figures/vpd_and_tleaf","_temperature-effect_",
+         paste0("pftc7_vpd_analysis/figures/vpd_and_tleaf","_temperature-effect_",
                 Sys.Date(),
                 ".png"),
        device = grDevices::png,
