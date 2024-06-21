@@ -10,33 +10,6 @@
 #   Slot M, Winter K. 2017.
 #   New Phyt doi: 10.1111/nph.14469
 #
-# ====================================================
-
-# # Fit a 2D kernel density ===============================
-# mat <- cbind(dat$tleaf,dat$vpdl)
-# bins <- KernSmooth::bkde2D(mat, bandwidth = c(0.25,0.25), gridsize = c(50L, 50L))
-# tmp <- cbind(data.table(tleaf=rep(bins$x1,length(bins$x2)),
-#                         vpdl=sort(rep(bins$x2,length(bins$x1)))),
-#              reshape2::melt(bins$fhat,value.name = 'p'))
-# 
-# # Fit a 2D GAM to the kernel density smooth =============
-# pm <- gam(p ~ te(tleaf,vpdl),
-#           family = betar,
-#           data=tmp)
-# pdat <- data.table(vpdl = seq(0.5,7.23,length.out=300)) %>% 
-#   expand_grid(., tleaf = seq(20,50,length.out=30)) %>% 
-#   mutate(log_vpdl = log(vpdl)) %>% 
-#   mutate(p = predict(pm, type='response',newdata=.)) %>% 
-#   filter(p >= 0.005) %>% # can change 
-#   mutate(fsite = "PNM") %>% 
-#   mutate(fspecies = levels(dat$fspecies)[20]) %>% 
-#   setDT()
-# pdat[,`:=`(log_vpdl = log(vpdl), 
-#            tleaf_c = scale(tleaf,scale=F)[,1],
-#            vpdl_c = scale(vpdl,scale=F)[,1])]
-
-
-
 # Sub models ===============================================
 vv <- vec_mod_group %>% 
   lapply(., FUN = function(sel_group){

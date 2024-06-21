@@ -34,9 +34,10 @@ g1.plot=(ggplot(slopes, aes(x = elevation, y = slope))) +
             geom_point(position = position_dodge(width = 0.75), size = 3) +
             geom_errorbar(aes(ymin = slope - se_slope, ymax = slope + se_slope),width = 0,
                           position = position_dodge(width = 0.75)) +
+            geom_smooth(method = 'lm', se = TRUE, color = "black") +
             scale_x_continuous(breaks = specific_breaks) +
             theme_classic() +theme(axis.text.y = element_text(size = 12),axis.text.x = element_text(size = 12),axis.title.x = element_text(size = 12),
                                    axis.title.y = element_text(size = 15),legend.title= element_blank()) +
             ylab(expression('g'[1])) + xlab("Elevation (masl)")
 g1.plot
-
+summary(lm(slope~elevation, data=slopes))

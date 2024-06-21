@@ -115,7 +115,9 @@ fn_theme <- function (base_size = 12, base_family = "", base_line_size = base_si
 #006BA4
 #FF800E
 # cols4all::c4a_gui()
-
+colors_norway <- c("plum1", "violet", "violetred", "violetred4") 
+colors_safrica <- c("lightblue1", "skyblue1", "dodgerblue","blue", "blue4")  
+colors_combined <- c(colors_norway, colors_safrica)
 p1 <- vv2 %>% 
   mutate(site = factor(site,
                        ordered = T,
@@ -133,8 +135,8 @@ p1 <- vv2 %>%
               color=NA,
               alpha=0.25)+
   geom_line(lwd=1)  +
-  scale_color_manual(values = c("#33BBEE", "#009988","#117733", "#EE7733", "#CC3311","#882255","#AA4499","#332288","#0077BB") %>% rev()) +
-  scale_fill_manual(values = c("#33BBEE", "#009988","#117733", "#EE7733", "#CC3311","#882255","#AA4499","#332288","#0077BB") %>% rev()) +
+  scale_color_manual(values = colors_combined) +
+  scale_fill_manual(values = colors_combined) +
   labs(color='Site',
        fill='Site', 
        y = expression(paste("(Partial) effect on Photosynthesis (umol ",
@@ -169,8 +171,8 @@ p2 <- ww2 %>%
                             m**-2, s**-1,")")),
        # x = expression(paste(T[leaf]~"(°C)"))
        x = "VPD (kPa)") +
-  scale_color_manual(values = c("#33BBEE", "#009988","#117733", "#EE7733", "#CC3311","#882255","#AA4499","#332288","#0077BB") %>% rev()) +
-   scale_fill_manual(values = c("#33BBEE", "#009988","#117733", "#EE7733", "#CC3311","#882255","#AA4499","#332288","#0077BB") %>% rev()) +
+  scale_color_manual(values = colors_combined) +
+  scale_fill_manual(values = colors_combined) +
   fn_theme() + theme(legend.position = "bottom"); p2
 
 p_out <- (p1|p2) + plot_annotation(tag_levels = 'a', 

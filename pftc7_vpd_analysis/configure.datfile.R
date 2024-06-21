@@ -13,6 +13,7 @@ library(patchwork)
 library(pacman)
 library(data.table)
 library(lubridate)
+library(gt)
 
 pacman::p_load(tidyverse,data.table,
                mgcv,mgcViz,
@@ -24,7 +25,8 @@ dat <- read_csv("outputs/raw.discardHooks_data.csv")
 
 weibull.topts.disc <- read_csv("outputs/discard.weibull.SANW.csv")
 weibull.topts.disc <- weibull.topts.disc %>%
-  select(curveID, T_opt)
+  select(curveID, T_opt,getbreadth_90)%>%
+  rename(breadth_95 = getbreadth_90)
 
 #Data for hooks ==============================
 weibull.cuthooks.raw <- read_csv("outputs/rawData.at.subset2.SANW.csv")
@@ -47,20 +49,20 @@ dat <- left_join(dat, Faster_Key, by = "curveID")
 dat<-left_join(dat,norway_key,by="curveID")
 dat <- left_join(dat, weibull.topts.disc, by = "curveID")
 dat <- dat %>%
-  select(Date.y,Date.measured.x, curveID,site.x,site.y, Elevation.masl,Elevation.y, T_opt,Species.y,taxon, Individual.y, BarcodeLeaf.y, hhmmss, Tleaf, A, gsw, Ci, Ca, Emm, VPDleaf, Tair, CO2_r, CO2_s)%>%
+  select(Date.y,Date.measured.x, curveID,site.x,site.y, Elevation.masl,Elevation.y, T_opt,breadth_95,Species.y,taxon, Individual.y, BarcodeLeaf.y, hhmmss, Tleaf, A, gsw, Ci, Ca, Emm, VPDleaf, Tair, CO2_r, CO2_s)%>%
   mutate(Elevation = ifelse(is.na(Elevation.y), Elevation.masl, Elevation.y)) %>%
   mutate(site.y = site.y + 5)%>%
   mutate(site = ifelse(is.na(site.x), site.y, site.x))%>%
   mutate(Species = ifelse(is.na(Species.y), taxon, Species.y))%>%
   mutate(Date = ifelse(is.na(Date.y), Date.measured.x,Date.y))%>%
-  select(Date, curveID,site, Elevation, T_opt,Species, Individual.y, BarcodeLeaf.y, hhmmss, Tleaf, A, gsw, Ci, Ca, Emm, VPDleaf, Tair, CO2_r, CO2_s)
+  select(Date, curveID,site, Elevation, T_opt,breadth_95,Species, Individual.y, BarcodeLeaf.y, hhmmss, Tleaf, A, gsw, Ci, Ca, Emm, VPDleaf, Tair, CO2_r, CO2_s)
 
 
 dat <- as.data.table(dat)
 dat[is.na(Species), Species := "hypoxis_costata"]
 # Rename columns in Dat to remain consistent with program script
 names(dat) <- c(
-  "date", "curveID","site", "elevation","weib.Topt", "species", "rep", "leaf", "time", "tleaf", "photo",
+  "date", "curveID","site", "elevation","weib.Topt","weib.breadth", "species", "rep", "leaf", "time", "tleaf", "photo",
   "cond", "ci", "ca", "trmmol", "vpdl", "tair", "co2r", "co2s"
 )
 
