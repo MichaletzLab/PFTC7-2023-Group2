@@ -1,40 +1,29 @@
 dat1 = dat%>%
   filter(curveid==c(3,1091))
-# Load necessary libraries
-library(mgcv)
-library(ggplot2)
-library(dplyr)
-library(gratia)
-library(data.table)
 
 # Ensure your data.table is in place
 dat1 <- as.data.table(dat1)
 
-# Function to calculate breadth
-get_breadth <- function(photo, tleaf, amax_fitted, threshold = 0.95) {
-  # Find tleaf values around the peak
-  idx_peak <- which.max(photo)
-  idx_left <- max(1, idx_peak - 1)
-  idx_right <- min(length(photo), idx_peak + 1)
+# Function to calculate breadth from predictions
+get_breadth <- function(predicted_photo, tleaf, threshold = 0.95) {
+  max_photo <- max(predicted_photo, na.rm = TRUE)
+  threshold_value <- threshold * max_photo
   
-  # Calculate breadth
-  breadth_left <- tleaf[idx_peak] - tleaf[idx_left]
-  breadth_right <- tleaf[idx_right] - tleaf[idx_peak]
-  breadth <- breadth_left + breadth_right
+  idx_left <- which(predicted_photo >= threshold_value)[1]
+  idx_right <- which(predicted_photo >= threshold_value)[length(which(predicted_photo >= threshold_value))]
   
-  # Scale breadth by the fitted Amax value
-  breadth_scaled <- breadth * (threshold * amax_fitted)
+  # Calculate breadth as absolute difference
+  breadth <- abs(tleaf[idx_right] - tleaf[idx_left])
   
-  return(breadth_scaled)
+  return(list(idx_left = idx_left, idx_right = idx_right, breadth = breadth))
 }
 
-# Function to fit GAMs and plot each curve individually
 fit_gams_and_plot <- function(data, curveid_col = "curveid", x_col = "tleaf", y_col = "photo", cond_col = "cond", topt_col = "weib.topt", breadth_col = "weib.breadth") {
   models <- c("gam_temp_cond", "gam_temp")
   results <- data.frame(curveid = numeric(), topt_temp = numeric(), topt_temp_cond = numeric(), topt_weib = numeric(), breadth_temp = numeric(), breadth_temp_cond = numeric(), breadth_weib = numeric())
   
   # Create a PDF file to save the plots
-  pdf("gam_fits.pdf")
+  pdf("gam_fits.pdf", width = 8, height = 8)  # Adjust width and height to make it more square
   
   for (curve_id in unique(data[[curveid_col]])) {
     curve_data <- subset(data, data[[curveid_col]] == curve_id) # Subset data for the current curveID
@@ -66,8 +55,13 @@ fit_gams_and_plot <- function(data, curveid_col = "curveid", x_col = "tleaf", y_
           topt_values$topt_temp_cond <- gratia::smooth_estimates(fit, unconditional = TRUE, smooth = 's(tleaf)') %>% 
             filter(.estimate == max(.estimate)) %>% 
             pull(tleaf)
-          amax_fitted <- fitted(fit, type = "lpmatrix")[1]  # Fitted Amax value
-          breadth_values$breadth_temp_cond <- get_breadth(curve_data$photo, curve_data$tleaf, amax_fitted)
+          breadth_values_temp_cond <- get_breadth(curve_data$pred_temp_cond, curve_data$tleaf, threshold=0.95)
+          breadth_values$breadth_temp_cond <- breadth_values_temp_cond$breadth
+          
+          # Calculate start and end points for the horizontal line
+          x_start_tleaf_cond <- curve_data$tleaf[breadth_values_temp_cond$idx_left]
+          x_end_tleaf_cond <- curve_data$tleaf[breadth_values_temp_cond$idx_right]
+          y_value_tleaf_cond <- max(curve_data$pred_temp_cond) * 0.95
         }
       } else if (model == "gam_temp") {
         # Fit GAM with only temperature
@@ -86,15 +80,20 @@ fit_gams_and_plot <- function(data, curveid_col = "curveid", x_col = "tleaf", y_
           topt_values$topt_temp <- gratia::smooth_estimates(fit, unconditional = TRUE, smooth = 's(tleaf)') %>% 
             filter(.estimate == max(.estimate)) %>% 
             pull(tleaf)
-          amax_fitted <- fitted(fit, type = "lpmatrix")[1]  # Fitted Amax value
-          breadth_values$breadth_temp <- get_breadth(curve_data$photo, curve_data$tleaf, amax_fitted)
+          breadth_values_temp <- get_breadth(curve_data$pred_temp, curve_data$tleaf, threshold=0.95)
+          breadth_values$breadth_temp <- breadth_values_temp$breadth
+          
+          # Calculate start and end points for the horizontal line
+          x_start_tleaf <- curve_data$tleaf[breadth_values_temp$idx_left]
+          x_end_tleaf <- curve_data$tleaf[breadth_values_temp$idx_right]
+          y_value_tleaf <- max(curve_data$pred_temp) * 0.95
         }
       }
     }
     
     topt_weib <- mean(curve_data[[topt_col]], na.rm = TRUE)
     topt_values$topt_weib <- topt_weib
-    breadth_weib <- mean(curve_data[[breadth_col]])
+    breadth_weib <- mean(curve_data[[breadth_col]], na.rm = TRUE)
     breadth_values$breadth_weib <- breadth_weib
     
     # Save the Topt and breadth values in the results dataframe
@@ -131,6 +130,33 @@ fit_gams_and_plot <- function(data, curveid_col = "curveid", x_col = "tleaf", y_
       plot <- plot + geom_vline(xintercept = topt_weib, color = 'grey', linetype = "dashed")
     }
     
+    # Add horizontal lines at the correct y-value
+    if (!is.na(breadth_values$breadth_temp_cond)) {
+      plot <- plot + geom_segment(aes(x = x_start_tleaf_cond, y = y_value_tleaf_cond,
+                                      xend = x_end_tleaf_cond, yend = y_value_tleaf_cond),
+                                  color = "blue", size = 1.2)
+    }
+    if (!is.na(breadth_values$breadth_temp)) {
+      plot <- plot + geom_segment(aes(x = x_start_tleaf, y = y_value_tleaf,
+                                      xend = x_end_tleaf, yend = y_value_tleaf),
+                                  color = "red", size = 1.2)
+    }
+    
+    # Add annotation for legend in top right corner dynamically
+    plot <- plot +
+      annotation_custom(
+        grob = textGrob("Temperature GAM", gp = gpar(col = "red", fontsize = 8)),
+        xmin = max(curve_data$tleaf) * 0.8, ymin = max(curve_data$photo) * 0.95
+      ) +
+      annotation_custom(
+        grob = textGrob("Temperature + Conductance GAM", gp = gpar(col = "blue", fontsize = 8)),
+        xmin = max(curve_data$tleaf) * 0.8, ymin = max(curve_data$photo) * 0.9
+      ) +
+      annotation_custom(
+        grob = textGrob("Weibull Topt", gp = gpar(col = "grey", fontsize = 8)),
+        xmin = max(curve_data$tleaf) * 0.8, ymin = max(curve_data$photo) * 0.85
+      )
+    
     # Print plot to PDF
     print(plot)
   }
@@ -141,11 +167,11 @@ fit_gams_and_plot <- function(data, curveid_col = "curveid", x_col = "tleaf", y_
   return(results)
 }
 
-# Call the function with your data
-results <- fit_gams_and_plot(dat1)
 
-# Print the results dataframe
-print(results)
+
+# Call the function with your data
+results <- fit_gams_and_plot(dat)
+write.csv(results, "gam.fits.raw.topts.csv")
 
 # Confirm the PDF creation
 if (file.exists("gam_fits.pdf")) {

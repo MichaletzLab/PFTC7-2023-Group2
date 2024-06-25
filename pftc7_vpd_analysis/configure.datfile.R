@@ -14,6 +14,8 @@ library(pacman)
 library(data.table)
 library(lubridate)
 library(gt)
+library(cowplot)
+library(grid)
 
 pacman::p_load(tidyverse,data.table,
                mgcv,mgcViz,
