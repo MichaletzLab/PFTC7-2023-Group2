@@ -1,9 +1,3 @@
-dat1 = dat%>%
-  filter(curveid==c(3,1091))
-
-# Ensure your data.table is in place
-dat1 <- as.data.table(dat1)
-
 # Function to calculate breadth from predictions
 get_breadth <- function(predicted_photo, tleaf, threshold = 0.95) {
   max_photo <- max(predicted_photo, na.rm = TRUE)
@@ -18,9 +12,11 @@ get_breadth <- function(predicted_photo, tleaf, threshold = 0.95) {
   return(list(idx_left = idx_left, idx_right = idx_right, breadth = breadth))
 }
 
+# Function to fit GAM models and plot, calculate AIC, and concurvity
 fit_gams_and_plot <- function(data, curveid_col = "curveid", x_col = "tleaf", y_col = "photo", cond_col = "cond", topt_col = "weib.topt", breadth_col = "weib.breadth") {
+  
   models <- c("gam_temp_cond", "gam_temp")
-  results <- data.frame(curveid = numeric(), topt_temp = numeric(), topt_temp_cond = numeric(), topt_weib = numeric(), breadth_temp = numeric(), breadth_temp_cond = numeric(), breadth_weib = numeric())
+  results <- data.frame(curveid = numeric(), topt_temp = numeric(), topt_temp_cond = numeric(), topt_weib = numeric(), breadth_temp = numeric(), breadth_temp_cond = numeric(), breadth_weib = numeric(), AIC_tleaf = numeric(), AIC_tleaf_cond = numeric(), concurvity_tleaf = numeric(), concurvity_tleaf_cond = numeric())
   
   # Create a PDF file to save the plots
   pdf("gam_fits.pdf", width = 8, height = 8)  # Adjust width and height to make it more square
@@ -35,6 +31,8 @@ fit_gams_and_plot <- function(data, curveid_col = "curveid", x_col = "tleaf", y_
     
     topt_values <- list(topt_temp = NA, topt_temp_cond = NA)
     breadth_values <- list(breadth_temp = NA, breadth_temp_cond = NA)
+    AIC_values <- list(AIC_tleaf = NA, AIC_tleaf_cond = NA)
+    concurvity_values <- list(concurvity_tleaf = NA, concurvity_tleaf_cond = NA)
     
     for (model in models) {
       fit <- NULL
@@ -57,6 +55,8 @@ fit_gams_and_plot <- function(data, curveid_col = "curveid", x_col = "tleaf", y_
             pull(tleaf)
           breadth_values_temp_cond <- get_breadth(curve_data$pred_temp_cond, curve_data$tleaf, threshold=0.95)
           breadth_values$breadth_temp_cond <- breadth_values_temp_cond$breadth
+          AIC_values$AIC_tleaf_cond <- AIC(fit)
+          concurvity_values$concurvity_tleaf_cond <- concurvity(fit)
           
           # Calculate start and end points for the horizontal line
           x_start_tleaf_cond <- curve_data$tleaf[breadth_values_temp_cond$idx_left]
@@ -82,6 +82,8 @@ fit_gams_and_plot <- function(data, curveid_col = "curveid", x_col = "tleaf", y_
             pull(tleaf)
           breadth_values_temp <- get_breadth(curve_data$pred_temp, curve_data$tleaf, threshold=0.95)
           breadth_values$breadth_temp <- breadth_values_temp$breadth
+          AIC_values$AIC_tleaf <- AIC(fit)
+          concurvity_values$concurvity_tleaf <- concurvity(fit)
           
           # Calculate start and end points for the horizontal line
           x_start_tleaf <- curve_data$tleaf[breadth_values_temp$idx_left]
@@ -96,14 +98,18 @@ fit_gams_and_plot <- function(data, curveid_col = "curveid", x_col = "tleaf", y_
     breadth_weib <- mean(curve_data[[breadth_col]], na.rm = TRUE)
     breadth_values$breadth_weib <- breadth_weib
     
-    # Save the Topt and breadth values in the results dataframe
+    # Save the Topt, breadth, AIC, and concurvity values in the results dataframe
     results <- rbind(results, data.frame(curveid = curve_id, 
                                          topt_temp = topt_values$topt_temp, 
                                          topt_temp_cond = topt_values$topt_temp_cond, 
                                          topt_weib = topt_weib,
                                          breadth_temp = breadth_values$breadth_temp,
                                          breadth_temp_cond = breadth_values$breadth_temp_cond,
-                                         breadth_weib = breadth_weib))
+                                         breadth_weib = breadth_weib,
+                                         AIC_tleaf = AIC_values$AIC_tleaf,
+                                         AIC_tleaf_cond = AIC_values$AIC_tleaf_cond,
+                                         concurvity_tleaf = concurvity_values$concurvity_tleaf,
+                                         concurvity_tleaf_cond = concurvity_values$concurvity_tleaf_cond))
     
     # Initialize plot
     plot <- ggplot(curve_data, aes(x = tleaf, y = photo)) +
@@ -151,31 +157,30 @@ fit_gams_and_plot <- function(data, curveid_col = "curveid", x_col = "tleaf", y_
       annotation_custom(
         grob = textGrob("Temperature + Conductance GAM", gp = gpar(col = "blue", fontsize = 8)),
         xmin = max(curve_data$tleaf) * 0.8, ymin = max(curve_data$photo) * 0.9
-      ) +
-      annotation_custom(
-        grob = textGrob("Weibull Topt", gp = gpar(col = "grey", fontsize = 8)),
-        xmin = max(curve_data$tleaf) * 0.8, ymin = max(curve_data$photo) * 0.85
       )
+    # Add legend
+    plot <- plot +
+      labs(x = "Temperature", y = "Photo") +
+      theme(legend.position = c(0.8, 0.2))
     
-    # Print plot to PDF
+    # Save plot to PDF
     print(plot)
+    
   }
   
   # Close the PDF device
   dev.off()
   
+  # Return results dataframe
   return(results)
 }
 
-
-
-# Call the function with your data
+# Example usage:
 results <- fit_gams_and_plot(dat)
-write.csv(results, "gam.fits.raw.topts.csv")
+filtered_results <- results %>%
+  rownames_to_column(var = "row_label")%>%
+  filter(str_detect(row_label, "worst"))
 
-# Confirm the PDF creation
-if (file.exists("gam_fits.pdf")) {
-  message("PDF successfully created.")
-} else {
-  message("PDF creation failed. Please check the code and directory path.")
-}
+write.csv(filtered_results, "gam.fits.raw.topts.csv")
+
+    

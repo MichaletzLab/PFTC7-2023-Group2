@@ -1,26 +1,11 @@
-# Use mgcv analysis package to ...
-# a) Quantify interaction effects
-# b) Test for Concurvity
-# ====================================================
-# The following code for fitting GAM models
-# was adapted from code written by Martijn Slot.
-# Source:
-#   Slot M, Winter K. 2017.
-#   New Phyt doi: 10.1111/nph.14469
-#
-# ====================================================
-
 # Fit GAM with interaction terms for data across sites
-gams_across_sites <- vec_mod_group %>% 
+gams_tleaf_cond <- vec_mod_group %>% 
   lapply(., FUN = function(sel_group) {
     tmp_dat <- dat[mod_group == sel_group]
     o <- gam(photo ~ 
-               s(fspecies, bs = 're') + 
-               s(vpdl, bs = 'ts', k = 5) + 
+               s(cond, bs = 'ts', k = 5) + 
                s(tleaf, bs = 'ts', k = 5),
-               # TODO: Spline fit for interaction effects
-               # ti(tleaf, vpdl, bs = 'ts', k = 5),
-             data = tmp_dat,
+             data = dat,
              select = TRUE,
              method = "REML")
     o$mod_group <- sel_group
