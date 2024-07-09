@@ -8,7 +8,7 @@ p_out <- dat %>%
   labs(x = "Leaf temperature (°C)",
        y = "VPD (kPa)") + 
   fn_theme(); p_out
-
+p_out
 ggsave(p_out, 
        filename=
          paste0("pftc7_vpd_analysis/figures/plot_VPD_tleaf_",
@@ -136,6 +136,8 @@ summary(lm(estimate~elevation+species, data=site.spec.m.dat))
 #Check OLS regression with just Tleaf, then just VPD, then both to ensure concurvity/multicollinearity is not an issue
 ########################
 summary(lm(photo~species+elevation+tleaf,data=dat)) #-0.081 ----> 0.23
+summary(lm(photo~species+elevation+cond,data=dat)) #28.49
+summary(lm(photo~species+elevation+cond+tleaf,data=dat))
 summary(lm(photo~species+elevation+vpdl,data=dat)) #-0.93 -----> -2.79
 summary(lm(photo~species+elevation+vpdl+tleaf,data=dat))
 vif(modmulti)

@@ -142,3 +142,4 @@ fn_theme <- function (base_size = 12, base_family = "", base_line_size = base_si
           legend.spacing.y = unit(0.01, 'cm'),
           complete = TRUE)
 }
+

@@ -171,10 +171,10 @@ fit_mod_schoolfield <- function(Data, curveID = "curveID", x = "Tleaf", y = "A",
   return(schoolfield.results.data)
 }
 
-#############CHECK THIS STILL FOR THE BREADTH THING. A LOT OF WEIRD VALUES ARE COMING UP STILL...
+
 
 #schld.test = raw.dat.discard%>%
 #  filter(curveID==c(3,6,25,27))
 
-#schoolfield.results.data=fit_mod_schoolfield(at.subset3%>% select(Tleaf, A, curveID), x = "Tleaf", y = "A", T_ref = 25)
+schoolfield.results.data=fit_mod_schoolfield(schld.test%>% select(Tleaf, A, curveID), x = "Tleaf", y = "A", T_ref = 25)
 #sum(schoolfield.results.data$AIC) # = -37008.26

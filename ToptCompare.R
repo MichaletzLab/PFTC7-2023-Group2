@@ -1,6 +1,51 @@
-topts.gam.add = read.csv("gam.fits.add.topts.csv")
-topts.gam.raw = read.csv("gam.fits.raw.topts.csv")
-topts.glm.raw = read.csv("glm.fits.topts.csv")
+topts.gam.add = read.csv("gam_fits_add.csv") #effects gam for tleaf and tleaf+cond  --------Don't compare this
+topts.gam.raw = read.csv("gam_fits_raw.csv") #gam for tleaf and tleaf+cond
+topts.glm.raw = read.csv("glm.fits.topts.csv") #glm for tleaf and tleaf+cond
+schoolfield.fit = read.csv("outputs/discard.schoolfield.SANW.csv")
+weibull.fit = read.csv("outputs/discard.weibull.SANW.csv")
+
+
+t.test(topts.gam.add$tleaf_opt, topts.gam.add$weib_Topt,paired=TRUE)
+t.test(topts.gam.add$tleaf_cond_opt, topts.gam.add$weib_Topt,paired=TRUE)
+t.test(topts.gam.add$tleaf_vpdl_opt, topts.gam.add$weib_Topt,paired=TRUE) ## This one is significant
+t.test(topts.gam.add$tleaf_cond_vpdl_opt, topts.gam.add$weib_Topt,paired=TRUE) ## Also significant
+
+
+aic.tleaf = sum(topts.gam.add$tleaf_AIC)
+aic.tleaf.cond= sum(topts.gam.add$tleaf_cond_AIC)
+aic.tleaf.vpdl=sum(topts.gam.add$tleaf_vpdl_AIC)
+aic.tleaf.cond.vpdl=sum(topts.gam.add$tleaf_cond_vpdl_AIC)
+concurv.tleaf = mean(topts.gam.add$tleaf_concurvity)
+concurv.tleaf.cond= mean(topts.gam.add$tleaf_cond_concurvity)
+concurv.tleaf.vpdl=mean(topts.gam.add$tleaf_vpdl_concurvity)
+concurv.tleaf.cond.vpdl=mean(topts.gam.add$tleaf_cond_vpdl_concurvity)
+
+raic.tleaf = sum(topts.gam.raw$AIC_tleaf)
+raic.tleaf.cond= sum(topts.gam.raw$AIC_tleaf_cond)
+raic.tleaf.vpdl=sum(topts.gam.raw$AIC_tleaf_vpdl)
+raic.tleaf.cond.vpdl=sum(topts.gam.raw$AIC_tleaf_vpdl_cond)
+rconcurv.tleaf = mean(topts.gam.raw$concurvity_tleaf)
+rconcurv.tleaf.cond= mean(topts.gam.raw$concurvity_tleaf_cond)
+rconcurv.tleaf.vpdl=mean(topts.gam.raw$concurvity_tleaf_vpdl)
+rconcurv.tleaf.cond.vpdl=mean(topts.gam.raw$concurvity_tleaf_vpdl_cond)
+
+weibull.AIC = sum(weibull.fit$AIC)
+
+summary_table <- data.frame(
+  Model = c("tleaf", "tleaf + cond", "tleaf + vpdl", "tleaf + cond + vpdl"),
+  Weibull.AIC = c(weibull.AIC,NA,NA,NA),
+  AIC_add = c(aic.tleaf, aic.tleaf.cond, aic.tleaf.vpdl, aic.tleaf.cond.vpdl),
+  Concurvity_add = c(concurv.tleaf, concurv.tleaf.cond, concurv.tleaf.vpdl, concurv.tleaf.cond.vpdl),
+  AIC_raw = c(raic.tleaf, raic.tleaf.cond, raic.tleaf.vpdl, raic.tleaf.cond.vpdl),
+  Concurvity_raw = c(rconcurv.tleaf, rconcurv.tleaf.cond, rconcurv.tleaf.vpdl, rconcurv.tleaf.cond.vpdl)
+)
+
+# Print the summary table
+print(summary_table)
+
+
+
+
 
 #Additive Gam mods 
 t.test(topts.gam.add$tleaf_cond_opt, topts.gam.add$weib_Topt,paired=TRUE) #not significant
@@ -71,3 +116,7 @@ plots <- lapply(pairs, function(pair) {
   create_scatter_plot(pair$x, pair$y, pair$xlab, pair$ylab, pair$main, paired_t_test)
 })
 do.call(grid.arrange, c(plots, ncol = 2))
+
+
+
+ggplot(aes(x=vpdl,y=photo))+geom_point
