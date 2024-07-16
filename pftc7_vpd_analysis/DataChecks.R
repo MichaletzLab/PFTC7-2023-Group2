@@ -8,10 +8,9 @@ p_out <- dat %>%
   labs(x = "Leaf temperature (°C)",
        y = "VPD (kPa)") + 
   fn_theme(); p_out
-p_out
 ggsave(p_out, 
        filename=
-         paste0("pftc7_vpd_analysis/figures/plot_VPD_tleaf_",
+         paste0("pftc7_vpd_analysis/figures/VPD.vs.tleaf_",
                 Sys.Date(),
                 ".png"),
        device = grDevices::png,
@@ -33,9 +32,9 @@ a_out <- dat %>%
        y = "Photosynthesis") + 
   fn_theme(); a_out
 
-ggsave(p_out, 
+ggsave(a_out, 
        filename=
-         paste0("pftc7_vpd_analysis/figures/plot_VPD_tleaf_",
+         paste0("pftc7_vpd_analysis/figures/cond.vs.A_",
                 Sys.Date(),
                 ".png"),
        device = grDevices::png,
@@ -44,7 +43,26 @@ ggsave(p_out,
        units='cm',
        scale = 0.5,
        dpi=600)
-summary(gam(vpdl ~ s(tleaf, bs = 'ts', k = 5), data = dat))
+
+## Plot tleaf vs gsw==================
+tleaf_out <- dat %>% 
+  ggplot(aes(cond,tleaf))+
+  geom_point(alpha=0.1)+
+  labs(x = "Leaf Temperature (˚C)",
+       y = "Conductance") + 
+  fn_theme(); a_out
+
+ggsave(tleaf_out, 
+       filename=
+         paste0("pftc7_vpd_analysis/figures/gsw.vs.tleaf_",
+                Sys.Date(),
+                ".png"),
+       device = grDevices::png,
+       width=30,
+       height=30,
+       units='cm',
+       scale = 0.5,
+       dpi=600)
 
 
 ## Plot m vs. max gs.==================

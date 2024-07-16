@@ -1,8 +1,50 @@
-topts.gam.add = read.csv("gam_fits_add.csv") #effects gam for tleaf and tleaf+cond  --------Don't compare this
+topts.gam.add = read.csv("gam_fits_add.csv") #effects gam for tleaf and tleaf+cond 
 topts.gam.raw = read.csv("gam_fits_raw.csv") #gam for tleaf and tleaf+cond
 topts.glm.raw = read.csv("glm.fits.topts.csv") #glm for tleaf and tleaf+cond
 schoolfield.fit = read.csv("outputs/discard.schoolfield.SANW.csv")
 weibull.fit = read.csv("outputs/discard.weibull.SANW.csv")
+
+
+t.test(topts.gam.add$tleaf_cond_breadth, topts.gam.add$weib_breadth,paired=TRUE)
+
+t.test(topts.gam.add$tleaf_cond_opt, topts.gam.add$weib_Topt,paired=TRUE)
+
+
+# Assuming you have the data stored in topts.gam.add
+# Create a data frame for plotting
+plot_data <- data.frame(
+  tleaf_cond_opt = topts.gam.add$tleaf_cond_opt,
+  weib_Topt = topts.gam.add$weib_Topt
+)
+
+ggplot(plot_data, aes(x = weib_Topt, y = tleaf_cond_opt)) +
+  geom_point(size = 3) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "blue") +
+  geom_smooth(method = "lm", se = TRUE, color = "red") +
+  labs(x = "Weibull T_opt Values", y = "GAM + Conditional T_opt Values") +
+  theme_classic()
+
+
+# Create a data frame for plotting
+plot_data_breadth <- data.frame(
+  tleaf_cond_breadth = topts.gam.add$tleaf_cond_breadth,
+  weib_breadth = topts.gam.add$weib_breadth
+)
+
+# Plot using ggplot2
+ggplot(plot_data_breadth, aes(x = weib_breadth, y = tleaf_cond_breadth)) +
+  geom_point(size = 3) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "blue") +
+  geom_smooth(method = "lm", se = TRUE, color = "red") +
+  labs(x = "Weibull breadth (˚C)", y = "GAM(tleaf + gsw) breadth (˚C)") +
+  theme_classic() +
+  xlim(0, 16) +
+  ylim(0, 16)
+
+
+
+
+
 
 
 t.test(topts.gam.add$tleaf_opt, topts.gam.add$weib_Topt,paired=TRUE)

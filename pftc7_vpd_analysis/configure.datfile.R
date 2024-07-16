@@ -2,6 +2,7 @@
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
+library(car)
 library(stringr)
 library(nls.multstart)
 library(nlstools)
@@ -108,7 +109,8 @@ vec_mod_group <- unique(dat$mod_group)
 species_summary <- dat %>%
   group_by(mod_group) %>%
   summarize(unique_species = n_distinct(fspecies))
-dat <- dat %>% mutate(mg = factor(paste(species,rep,leaf)))
+dat <- dat %>% mutate(mg = factor(paste(species,rep,leaf)))%>%
+  mutate(country = case_when(curveid > 1000~"Norway",curveid < 1000~"SAfrica"))
 
 ###############
 ###############

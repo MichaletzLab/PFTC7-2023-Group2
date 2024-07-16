@@ -99,7 +99,7 @@ fit_weibull_breadth <- function(Data, curveID = "curveID", x = "Tleaf", y = "A")
         # Try to get breadth another way
         Amin <- min(predicted_A)
         Arange <- Amax - Amin
-        A90max <- 0.9 * Arange
+        A90max <- 0.95 * Arange
         Aat90b <- Amin + A90max
         
         # Find the two Tleaf values closest to Aat90b on either side of Amax

@@ -33,9 +33,9 @@ at.files = list.files(full.names=T)
 at.ids <- lapply(at.files, function(x)strsplit(x, split = "[.]")[[1]][3]) #save the individual IDs, extracted from file names
 
 
-tst=read_6800_with_BLC("2023-12-16-1002_logdata.123")
-tst=read_6800_with_BLC("2023-12-11-0756_logdata.59")
-tst=read_6800_with_BLC("2023-12-06-1312_logdata.3")
+#tst=read_6800_with_BLC("2023-12-16-1002_logdata.123")
+#tst=read_6800_with_BLC("2023-12-11-0756_logdata.59")
+#tst=read_6800_with_BLC("2023-12-06-1312_logdata.3")
 
 # LOAD LICOR FILES
 file.x <- list()
@@ -202,78 +202,3 @@ write.csv(Sfield.results_meta_discard.hooks, 'schoolfield.discard.hooks.csv', ro
 #write.csv(Sfield.results_meta_cut.hooks, 'schoolfield.cut.hooks.csv', row.names = F)
 
 ##### Datafiles are all saved (raw and modeled sets) now. Analysis can proceed. 
-
-
-
-# Tomst data
-setwd("../data")
-tomst <- read.csv('PFTC7_Tomst_Data.csv')
-tomst$site = as.character(tomst$site)
-tomst$datetime = as.POSIXct(tomst$datetime, format = "%Y-%m-%d %H:%M:%S")
-(mean_temp.tomst<- tomst %>%
-  group_by(site) %>%
-    filter(hour(datetime) >= 8 & hour(datetime) < 18)%>%
-  summarise(mean_soil = mean(T1),
-            mean_surface = mean(T2),
-            mean_air = mean(T3)))
-
-#Site 5W the species marked as Heli. pallidum should be Heli. nudifolium instead.
-#This was fixed above with Imke's species fixes.
-#results2 = results2 %>%
-  #mutate(Species = ifelse(site == 5 & Species == "Helichrysum pallidum", "Helichrysum nudifolium", Species))
-
-#Add in correct waypoints
-setwd("../data")
-waypoints= read.csv("PFCT7_site_waypoints.csv")
-ave.latlong<- waypoints %>%
-  group_by(plot, aspect) %>%
-  summarise(latitude = mean(lat), longitude = mean(lon))%>%
-  filter(!any(is.na(latitude)))%>%
-  rename(site=plot)%>%
-  rename(Aspect=aspect)
-ave.latlong$site = as.character(ave.latlong$site)
-results2$site = as.character(results2$site)
-
-results2 = results2%>%
-  left_join(ave.latlong, by = c("site", "Aspect"))
-
-setwd("../outputs")
-write.csv(results2, 'results2.csv', row.names = F)
-
-#Add in mean air temperatures from the tomst data
-tomst <- tomst %>%
-  mutate(Elevation = case_when(
-    site == 1 ~ 2000,
-    site == 2 ~ 2200,
-    site == 3 ~ 2400,
-    site == 4 ~ 2600,
-    site == 5 ~ 2800))%>%
-  mutate(Aspect = case_when(
-    aspect == "east" ~ "E",
-    aspect == "west" ~ "W"))
-mean_temp <- tomst %>%
-  group_by(Elevation, Aspect) %>%
-  mutate(timestamp = as.POSIXct(datetime, format = "%Y-%m-%d %H:%M:%S")) %>%
-  filter(hour(timestamp) >= 8 & hour(timestamp) < 18) %>%
-  group_by(Elevation, Aspect) %>%
-  summarize(mean_temp = mean(T1),
-            se_temp = sd(T1) / sqrt(n()))
-results2$Elevation=as.numeric(results2$Elevation)
-mean_temp$Elevation=as.numeric(mean_temp$Elevation)
-results3 <- left_join(results2, mean_temp, by = c("Elevation", "Aspect"))
-write.csv(results3, 'results3.csv', row.names = F)
-#create a dataset that has only the good curves but taken just after both match corrections were run, before anything else was run.
-#josef_dataset <- at.corr.noneq %>%
-#  semi_join(results2, by = "curveID")
-
-#josef_dataset = josef_dataset %>%
-#  mutate(Species = ifelse(site == 5 & Species == "Helichrysum pallidum", "Helichrysum nudifolium", Species))%>%
-#ria.set = left_join(at.corr.noneq, ave.latlong, by = c("site", "Aspect"))
-
-#setwd("../outputs")
-#write.csv(ria.set, 'SA_RIA.csv', row.names = F)
-
-
-vpd.summary = at.all%>%
-  group_by(curveID) %>%
-  summarise(avg_VPDleaf = mean(VPDleaf, na.rm = TRUE))

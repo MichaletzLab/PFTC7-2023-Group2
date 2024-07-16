@@ -27,9 +27,10 @@ Load data:
 ```{r}
 #truncated.weibull = read_csv("outputs/weibull.cut.hooks.csv")
 #truncated.schoolfield = read_csv("outputs/schoolfield.cut.hooks.csv")
-discard.weibull = read_csv("outputs/weibull.discard.hooks.csv")
-
-discard.schoolfield = read_csv("outputs/schoolfield.discard.hooks.csv")
+discard.weibull = read_csv("outputs/discard.weibull.SANW.csv")
+discard.schoolfield = read_csv("outputs/discard.schoolfield.SANW.csv")
+species.key = read.csv("data/Faster_Key.csv")
+species.key.n=read_csv("data/Norway.Key.csv")
 ```
 
 Join data with plot key info and get rid of extraneous columns
@@ -38,6 +39,7 @@ discard.weibull$curveID = as.numeric(discard.weibull$curveID)
 species.key<-species.key %>%
   rename(curveID = Obs)
 discard.weibull <- left_join(discard.weibull,species.key, by="curveID")
+discard.weibull <- left_join(discard.weibull,species.key.n, by="curveID")
 discard.weibull<- discard.weibull%>%
   mutate(Species = ifelse(is.na(Species.y), taxon, Species.y)) %>%
   mutate(BarcodeLeaf = ifelse(is.na(BarcodeLeaf.x), ID, BarcodeLeaf.x)) %>%
@@ -50,6 +52,7 @@ discard.weibull<- discard.weibull%>%
   
 discard.schoolfield$curveID = as.numeric(discard.schoolfield$curveID)
 discard.schoolfield <- left_join(discard.schoolfield,species.key, by="curveID")
+discard.schoolfield <- left_join(discard.schoolfield,species.key.n, by="curveID")
 discard.schoolfield<- discard.schoolfield%>%
   mutate(Species = ifelse(is.na(Species.y), taxon, Species.y)) %>%
   mutate(BarcodeLeaf = ifelse(is.na(BarcodeLeaf.x), ID, BarcodeLeaf.x)) %>%
@@ -149,8 +152,8 @@ Make the final dataset into a csv:
 write.csv(discard.weibull, "discard.weibull.SANW.csv")
 write.csv(discard.schoolfield, "discard.schoolfield.SANW.csv")
 
-discard.weibull <- read_csv("discard.weibull.SANW.csv")
-discard.schoolfield <- read.csv("discard.schoolfield.SANW.csv")
+discard.weibull <- read_csv("outputs/discard.weibull.SANW.csv")
+discard.schoolfield <- read.csv("outputs/discard.schoolfield.SANW.csv")
 ```
 
 
@@ -231,11 +234,10 @@ Plot a paired boxplot of Topt vs. elevation
 ```
 Plot a jittered scatterplot of Topt vs. elevation:
 ```{r}
-elev.asp.plot = ggplot(discard.weibull, aes(x = Elevation, y = T_opt, shape = Aspect)) +
+elev.asp.plot = ggplot(discard.weibull, aes(x = Elevation, y = T_opt)) +
   geom_smooth(method = "lm", se = TRUE, aes(group = 1), color = "black") +
   geom_point(position = position_jitter(width = 50, height = 0), size = 2, color = "black") +
   labs(shape = "Aspect") +
-  scale_shape_manual(values = c("E" = 1, "W" = 2), labels = c("East", "West")) +
   theme_classic() +
   xlab("Elevation (m)") + 
   ylab("Topt (˚C)") +
@@ -250,7 +252,7 @@ elev.asp.plot = ggplot(discard.weibull, aes(x = Elevation, y = T_opt, shape = As
   
 
 # Calculate the linear regression model to extract p-value
-model.toptelev <- lm(T_opt ~ Elevation+Aspect, data = discard.weibull)
+model.toptelev <- lm(T_opt ~ Elevation, data = discard.weibull)
 
 p_value <- summary(model.toptelev)$coefficients[2,4]
 
@@ -548,6 +550,37 @@ formatted_p_value <- sprintf("p-value = %.3f", p_value)
 b.tom.air.b=b.tom.air.b+theme(legend.position = "none")
 figure4 = ggarrange(b.tom.air.b,b.tom.range.b+rremove("ylab"),nrow=1, common.legend=TRUE,legend = "right",labels = c("A","B"))
 ```
+
+
+
+
+```{r}
+breadth.elev <- discard.weibull %>%
+            ggplot(aes(x = Elevation, y = getbreadth_90)) +
+            geom_point(size = 2.5, 
+                       position = position_jitter(width = 0.5, height = 0)) +
+            geom_smooth(method = 'lm', se = TRUE, color = "black") +
+            xlab("Elevation (m)") + ylab("Thermal breadth (˚C)") +
+            theme_classic() +
+            theme(
+              text = element_text(size = 17),
+              axis.title.x = element_text(size = 15),
+              axis.title.y = element_text(size = 15),
+              legend.text = element_text(size = 14),
+              legend.title = element_text(size = 14)
+      )
+
+model.b.elev <- lm(getbreadth_90 ~ Elevation, data = discard.weibull)
+p_value <- summary(model.b.elev)$coefficients[2,4]
+# Format the p-value
+formatted_p_value <- sprintf("p-value = %.3f", p_value)
+# Annotate the plot with the p-value
+(breadth.elev <- breadth.elev +
+  annotate("text", x = Inf, y = Inf, label = formatted_p_value, 
+           hjust = 1.1, vjust = 25, size = 5))
+```
+
+
 
 Plot getbreadth_90 vs. mean air temp tomst
 ```{r}
