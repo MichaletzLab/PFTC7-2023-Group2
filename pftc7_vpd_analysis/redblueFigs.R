@@ -4,7 +4,9 @@
         # Plot of gams involving conductance -> x = gsw
 # Dependencies: configure.datfile.R
 
-
+# Load fit functions:
+source("pftc7_vpd_analysis/ModelCode/GAM_schoolfield_tleaf.R")
+source("pftc7_vpd_analysis/ModelCode/GAM_schoolfield_tleaf_cond.R")
 ########################################################
 #Make multi-panel version for site (can comment in or out the species fixed effect)
 ########################################################
@@ -151,7 +153,7 @@ ssmod_sm <- lapply(ssmod, function(x) {
 # Fit Schoolfield GAM
 ssmod.tleaf <- lapply(vec_mod_group, function(sel_group) {
   tmp_dat <- dat[dat$mod_group == sel_group, ]
-  fit_results <- fit_schoolfield_gam("tleaf", "photo", T_ref = 25, start_params = start_params, data = tmp_dat)
+  fit_results <- fit_schoolfield.tleaf_gam("tleaf", "photo", T_ref = 25, start_params = start_params, data = tmp_dat)
   return(list(mod_group = sel_group, gam_fit = fit_results$gam_fit))
 })
 
