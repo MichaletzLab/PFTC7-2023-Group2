@@ -1,3 +1,10 @@
+# Purpose: Make main GAM model comparison figures
+# Plots:  Plot of Slot et al. modified to also have a tleaf + cond line
+        # Plot with 5 GAM models - including an incremental presentation version -> x = tleaf
+        # Plot of gams involving conductance -> x = gsw
+# Dependencies: configure.datfile.R
+
+
 ########################################################
 #Make multi-panel version for site (can comment in or out the species fixed effect)
 ########################################################
@@ -107,7 +114,7 @@ p <- combined_data %>%
   theme_classic() +
   theme(legend.position = 'bottom', strip.text = element_text(face = 'bold', hjust = 0)) +
   geom_vline(data = avg_weib_topt, aes(xintercept = avg_weib_topt), color = 'grey', lty = 2, show.legend = FALSE)
-
+p
 # Save the Plot
 ggsave(p, 
        filename = paste0("pftc7_vpd_analysis/figures/threeGAM_site_fixSpec", Sys.Date(), ".png"),
@@ -120,122 +127,8 @@ ggsave(p,
 
 
 
-########################################################
-#Make one panel version
-########################################################
-# Define unique model groups
-vec_mod_group <- unique(dat$mod_group)
-
-# Model 1: Temperature + VPD
-vvt <- lapply(vec_mod_group, function(sel_group) {
-  tmp_dat <- dat[mod_group == sel_group]
-  o <- gam(photo ~ 
-             #s(fspecies, bs='re') + 
-             s(vpdl, bs='ts', k=5) + 
-             s(tleaf, bs='ts', k=5), 
-           data=tmp_dat,
-           select=TRUE,
-           method="REML")
-  o$mod_group <- sel_group
-  return(o)
-})
-
-vv2t <- lapply(vvt, function(x) {
-  smooth_estimates(x, unconditional=TRUE, smooth='s(tleaf)') %>%
-    mutate(mod="m_tv", R2=summary(x)$r.sq)
-}) %>% rbindlist()
-
-# Model 2: Temperature
-wwt <- lapply(vec_mod_group, function(sel_group) {
-  tmp_dat <- dat[mod_group == sel_group]
-  o <- gam(photo ~ 
-             s(tleaf, bs='ts', k=5), 
-           data=tmp_dat,
-           select=TRUE,
-           method="REML")
-  o$mod_group <- sel_group
-  return(o)
-})
-
-ww2t <- lapply(wwt, function(x) {
-  smooth_estimates(x, unconditional=TRUE, smooth='s(tleaf)') %>%
-    mutate(mod="m_t", R2=summary(x)$r.sq)
-}) %>% rbindlist()
-
-# Model 3: Temperature + Cond
-ww <- lapply(vec_mod_group, function(sel_group) {
-  tmp_dat <- dat[mod_group == sel_group]
-  o <- gam(photo ~ 
-             #s(fspecies, bs='re') + 
-             s(cond, bs='ts', k=5) + 
-             s(tleaf, bs='ts', k=5), 
-           data=tmp_dat,
-           select=TRUE,
-           method="REML")
-  o$mod_group <- sel_group
-  return(o)
-})
-
-vv2 <- lapply(ww, function(x) {
-  smooth_estimates(x, unconditional=TRUE, smooth='s(tleaf)') %>%
-    mutate(mod="m_tc", R2=summary(x)$r.sq)
-}) %>% rbindlist()
-
-# Combine All Data
-combined_data <- rbindlist(list(vv2t, ww2t, vv2), fill=TRUE)
-
-# Extract Topt
-fig_dat_topt <- combined_data %>% 
-  group_by(mod) %>% 
-  filter(.estimate == max(.estimate)) %>% 
-  filter(.estimate < 41) %>% 
-  ungroup() %>% 
-  select(mod, tleaf) %>% 
-  rename(Topt = tleaf)
-
-# Calculate Average Weibull Topt
-avg_weib_topt <- dat %>%
-  summarize(avg_weib_topt = mean(weib.topt, na.rm = TRUE)) %>%
-  ungroup()
-
-# Ensure data is ordered by tleaf
-combined_data <- combined_data %>%
-  arrange(tleaf)
-
-# Plot without faceting
-p_single <- combined_data %>%
-  ggplot(aes(x = tleaf, y = .estimate, color = mod, fill = mod)) +
-  geom_smooth(method = "gam", formula = y ~ s(x, bs = "ts"), se = TRUE, size = 1, alpha = 0.25) +
-  geom_hline(aes(yintercept = 0), col = 'grey40', size = 0.5, linetype = 1) +
-  geom_vline(data = fig_dat_topt, aes(xintercept = Topt, color = mod), linetype = 2, show.legend = FALSE) +
-  scale_color_manual(values = c("m_t" = "#cf0000", "m_tv" = "navy", "m_tc" = "green"),
-                     labels = c("m_t" = "Temperature", "m_tv" = "Temperature + VPD", "m_tc" = "Temperature + Conductance")) +
-  scale_fill_manual(values = c("m_t" = "#cf0000", "m_tv" = "navy", "m_tc" = "green"),
-                    labels = c("m_t" = "Temperature", "m_tv" = "Temperature + VPD", "m_tc" = "Temperature + Conductance")) +
-  scale_x_continuous(breaks = seq(5, 40, 5), expand = c(0, 0)) +
-  scale_y_continuous(expand = c(0, 0)) +
-  labs(color = 'GAM', fill = 'GAM', 
-       y = expression(paste("(Partial) effect on Photosynthesis (µmol ", CO[2], " ", m^-2, s^-1, ")")), 
-       x = "Leaf temperature (°C)") +
-  theme_classic() +
-  theme(legend.position = 'bottom') +
-  geom_vline(data = avg_weib_topt, aes(xintercept = avg_weib_topt), color = 'grey', linetype = 2, show.legend = FALSE)
-
-# Save the Plot
-ggsave(p_single, 
-       filename = paste0("pftc7_vpd_analysis/figures/threeGAM", Sys.Date(), ".png"),
-       device = grDevices::png,
-       width = 20,
-       height = 20,
-       units = 'cm',
-       scale = 0.8,
-       dpi = 600)
-
-
-
-
 ###############################################################
-#Make one panel version with a line for schoolfield + cond too
+#Make one panel version with a line for all 5 models
 ###############################################################
 # Define data and start parameters
 vec_mod_group <- unique(dat$mod_group)
@@ -350,6 +243,9 @@ fig_dat_topt <- combined_data %>%
 avg_weib_topt <- dat %>%
   summarize(avg_weib_topt = mean(weib.topt, na.rm = TRUE)) %>%
   ungroup()
+avg_school_topt <- dat %>%
+  summarize(avg_school_topt = mean(school.topt, na.rm = TRUE)) %>%
+  ungroup()
 
 # Ensure data is ordered by tleaf
 combined_data <- combined_data %>%
@@ -400,52 +296,55 @@ ggsave(p_single,
   scale_x_continuous(breaks = seq(5, 40, 5), expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
   coord_cartesian(ylim = c(-20, 15))+
-  labs(color = 'GAM', fill = 'GAM', 
-       y = expression(paste("(Partial) effect on Photosynthesis (µmol ", CO[2], " ", m^-2, s^-1, ")")), 
-       x = "Leaf temperature (°C)") +
-  theme_classic() +
-  theme(legend.position = 'bottom') +
-  geom_vline(data = avg_weib_topt, aes(xintercept = avg_weib_topt), color = 'grey', linetype = 2, show.legend = FALSE, size=1))
+   labs(color = 'GAM', fill = 'GAM', 
+        y = expression(paste("Corrected photosynthesis (µmol ", CO[2], " ", m^-2, s^-1, ")")), 
+        x = "Leaf temperature (°C)") +
+   theme_classic() +
+   theme(legend.position = 'bottom') +
+   geom_vline(data = avg_weib_topt, aes(xintercept = avg_weib_topt), color = 'grey', linetype = 2, show.legend = FALSE, size=1)+
+   geom_vline(data = avg_school_topt, aes(xintercept = avg_school_topt), color = 'grey2', linetype = 2, show.legend = FALSE, size=1))
 
 (redblueplot2 <- combined_data %>%
-    filter(mod %in% c("m_t", "m_tc")) %>%
+    filter(mod %in% c("m_t", "m_tv")) %>%
     ggplot(aes(x = tleaf, y = .estimate, color = mod, fill = mod)) +
     geom_smooth(method = "gam", formula = y ~ s(x, bs = "ts"), se = TRUE, size = 1, alpha = 0.25) +
     geom_hline(aes(yintercept = 0), col = 'grey40', size = 0.5, linetype = 1) +
-    geom_vline(data = fig_dat_topt %>% filter(mod %in% c("m_t", "m_tc")), aes(xintercept = Topt, color = mod), linetype = 2, show.legend = FALSE, size=1) +
-    scale_color_manual(values = c("m_t" = "#cf0000", "m_tc" = "green"),
-                       labels = c("m_t" = "Temperature", "m_tc" = "Temperature + gsw")) +
-    scale_fill_manual(values = c("m_t" = "#cf0000", "m_tc" = "green"),
-                      labels = c("m_t" = "Temperature", "m_tc" = "Temperature + gsw")) +
+    geom_vline(data = fig_dat_topt %>% filter(mod %in% c("m_t", "m_tv")), aes(xintercept = Topt, color = mod), linetype = 2, show.legend = FALSE, size=1) +
+    scale_color_manual(values = c("m_t" = "#cf0000", "m_tv" = "navy"),
+                       labels = c("m_t" = "Temperature", "m_tv" = "Temperature + VPD")) +
+    scale_fill_manual(values = c("m_t" = "#cf0000", "m_tv" = "navy"),
+                      labels = c("m_t" = "Temperature", "m_tv" = "Temperature + VPD")) +
     scale_x_continuous(breaks = seq(5, 40, 5), expand = c(0, 0)) +
     scale_y_continuous(expand = c(0, 0)) +
     coord_cartesian(ylim = c(-20, 15)) +
     labs(color = 'GAM', fill = 'GAM', 
-         y = expression(paste("(Partial) effect on Photosynthesis (µmol ", CO[2], " ", m^-2, s^-1, ")")), 
+         y = expression(paste("Corrected photosynthesis (µmol ", CO[2], " ", m^-2, s^-1, ")")), 
          x = "Leaf temperature (°C)") +
     theme_classic() +
     theme(legend.position = 'bottom') +
-    geom_vline(data = avg_weib_topt, aes(xintercept = avg_weib_topt), color = 'grey', linetype = 2, show.legend = FALSE, size=1))
+    geom_vline(data = avg_weib_topt, aes(xintercept = avg_weib_topt), color = 'grey', linetype = 2, show.legend = FALSE, size=1)+
+    geom_vline(data = avg_school_topt, aes(xintercept = avg_school_topt), color = 'grey2', linetype = 2, show.legend = FALSE, size=1))
 
 (redblueplot3 <- combined_data %>%
-    filter(mod %in% c("m_t", "m_tc", "m_tv")) %>%
+    filter(mod %in% c("m_t", "m_tv", "m_tc")) %>%
     ggplot(aes(x = tleaf, y = .estimate, color = mod, fill = mod)) +
     geom_smooth(method = "gam", formula = y ~ s(x, bs = "ts"), se = TRUE, size = 1, alpha = 0.25) +
     geom_hline(aes(yintercept = 0), col = 'grey40', size = 0.5, linetype = 1) +
-    geom_vline(data = fig_dat_topt %>% filter(mod %in% c("m_t", "m_tc", "m_tv")), aes(xintercept = Topt, color = mod), linetype = 2, show.legend = FALSE, size=1) +
-    scale_color_manual(values = c("m_t" = "#cf0000", "m_tc" = "green", "m_tv" = "navy"),
-                       labels = c("m_t" = "Temperature", "m_tc" = "Temperature + gsw", "m_tv" = "Temperature + VPD")) +
-    scale_fill_manual(values = c("m_t" = "#cf0000", "m_tc" = "green", "m_tv" = "navy"),
-                      labels = c("m_t" = "Temperature", "m_tc" = "Temperature + gsw", "m_tv" = "Temperature + VPD")) +
+    geom_vline(data = fig_dat_topt %>% filter(mod %in% c("m_t", "m_tv", "m_tc")), aes(xintercept = Topt, color = mod), linetype = 2, show.legend = FALSE, size=1) +
+    scale_color_manual(values = c("m_t" = "#cf0000", "m_tv" = "navy","m_tc" = "green"),
+                       labels = c("m_t" = "Temperature", "m_tv" = "Temperature + VPD","m_tc" = "Temperature + gsw")) +
+    scale_fill_manual(values = c("m_t" = "#cf0000", "m_tv" = "navy","m_tc" = "green"),
+                      labels = c("m_t" = "Temperature", "m_tv" = "Temperature + VPD","m_tc" = "Temperature + gsw")) +
     scale_x_continuous(breaks = seq(5, 40, 5), expand = c(0, 0)) +
     scale_y_continuous(expand = c(0, 0)) +
-    coord_cartesian(ylim = c(-20, 15)) +
+    coord_cartesian(ylim = c(-15, 9)) +
     labs(color = 'GAM', fill = 'GAM', 
-         y = expression(paste("(Partial) effect on Photosynthesis (µmol ", CO[2], " ", m^-2, s^-1, ")")), 
+         y = expression(paste("Corrected photosynthesis (µmol ", CO[2], " ", m^-2, s^-1, ")")), 
          x = "Leaf temperature (°C)") +
     theme_classic() +
     theme(legend.position = 'bottom') +
-    geom_vline(data = avg_weib_topt, aes(xintercept = avg_weib_topt), color = 'grey', linetype = 2, show.legend = FALSE, size=1))
+    geom_vline(data = avg_weib_topt, aes(xintercept = avg_weib_topt), color = 'grey', linetype = 2, show.legend = FALSE, size=1)+
+    geom_vline(data = avg_school_topt, aes(xintercept = avg_school_topt), color = 'grey2', linetype = 2, show.legend = FALSE, size=1))
 
 
 (redblueplot4 <- combined_data %>%

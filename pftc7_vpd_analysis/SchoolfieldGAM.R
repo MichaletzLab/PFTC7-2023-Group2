@@ -1,23 +1,16 @@
-dat1 <- dat%>%
-  filter(curveid==c(3,6,9,1091))
+# Purpose: Fit schoolfield model via GAM method - four different versions
+# Plots: Schoolfield only fit plot 
+        #Plotting 7 models on each curveid
+# File outputs: GAM.compare.csv
+# Dependencies: configure.datfile.R
+
+
+
 
 #####################
 #Get the schoolfield to fit within the gam rather than in nls.multstart (overall - no iteration)
   #schoolfield and tleaf only
 #####################
-library(mgcv)
-library(dplyr)
-
-# Schoolfield function
-schoolfield <- function(temp, J_ref, E, E_D, T_opt, T_ref = 25) {
-  k <- 8.62e-5  # Boltzmann's constant (eV K-1)
-  temp <- temp + 273.15  # Convert to Kelvin
-  T_ref <- T_ref + 273.15  # Convert to Kelvin
-  T_opt <- T_opt + 273.15  # Convert to Kelvin
-  return(J_ref * exp(E * (1/(k*T_ref) - 1/(k*temp))) / 
-           (1 + E/(E_D - E) * exp((E_D/k) * (1/T_opt - 1/temp))))
-}
-
 # Custom smooth constructor for the Schoolfield model
 schoolfield_smooth <- function(temp, J_ref, E, E_D, T_opt, k = 8.62e-5) {
   temp <- temp + 273.15  # Convert to Kelvin
@@ -70,36 +63,17 @@ fit_schoolfield_gam <- function(data, x_var, y_var,  T_ref = 25, start_params) {
   return(list(gam_fit = gam_fit, opt_params = opt_params))
 }
 
-# Example usage
 start_params <- c(J_ref = 35, E = 0.5, E_D = 1.5, T_opt = 20) #these were determined by the average of the nls.multstart results
 data <- dat1 %>% select(tleaf, photo, cond, curveid)
 fit_results <- fit_schoolfield_gam(data, "tleaf", "photo", T_ref = 25, start_params = start_params)
 
 summary(fit_results$gam_fit)
-fit_results$opt_params
-
 
 
 
 ################################################################
 # Schoolfield Only GAM:::: 
 ################################################################
-# Custom smooth constructor for the Schoolfield model
-schoolfield_smooth <- function(temp, J_ref, E, E_D, T_opt, T_ref = 25, k = 8.62e-5) {
-  temp <- temp + 273.15  # Convert to Kelvin
-  T_ref <- T_ref + 273.15  # Reference temperature (Kelvin)
-  T_opt <- T_opt + 273.15  # Optimal temperature (Kelvin)
-  return(J_ref * exp(E * (1/(k*T_ref) - 1/(k*temp))) / 
-           (1 + E/(E_D - E) * exp((E_D/k) * (1/T_opt - 1/temp))))
-}
-
-# Define a function to generate the Schoolfield basis
-schoolfield_basis <- function(data, x_var, J_ref, E, E_D, T_opt, T_ref = 25) {
-  x <- data[[x_var]]
-  basis <- schoolfield_smooth(x, J_ref, E, E_D, T_opt, T_ref)
-  return(basis)
-}
-
 # Wrapper function to fit the GAM model with Schoolfield parameters
 fit_schoolfieldONLY_gam <- function(data, y_var, x_var, T_ref = 25, start_params) {
   # Objective function to minimize (negative log-likelihood)
@@ -142,6 +116,8 @@ data <- dat1 %>% select(tleaf, photo)
 fit_results_only_schoolfield <- fit_schoolfieldONLY_gam(data, "photo", "tleaf", T_ref = 25, start_params = start_params)
 
 summary(fit_results_only_schoolfield$gam_fit)
+
+
 
 ####################Partial Effects Plot:::::::::::::::
 # Define a range of tleaf values for prediction
@@ -191,33 +167,6 @@ ggsave(p,
 #####################
 #Schoolfield in gam with cond and tleaf
 #####################
-
-# Schoolfield function
-schoolfield <- function(temp, J_ref, E, E_D, T_opt, T_ref = 25) {
-  k <- 8.62e-5  # Boltzmann's constant (eV K-1)
-  temp <- temp + 273.15  # Convert to Kelvin
-  T_ref <- T_ref + 273.15  # Convert to Kelvin
-  T_opt <- T_opt + 273.15  # Convert to Kelvin
-  return(J_ref * exp(E * (1/(k*T_ref) - 1/(k*temp))) / 
-           (1 + E/(E_D - E) * exp((E_D/k) * (1/T_opt - 1/temp))))
-}
-
-# Custom smooth constructor for the Schoolfield model
-schoolfield_smooth <- function(temp, J_ref, E, E_D, T_opt, k = 8.62e-5) {
-  temp <- temp + 273.15  # Convert to Kelvin
-  T_ref <- 25 + 273.15  # Reference temperature (Kelvin)
-  T_opt <- T_opt + 273.15  # Optimal temperature (Kelvin)
-  return(J_ref * exp(E * (1/(k*T_ref) - 1/(k*temp))) / 
-           (1 + E/(E_D - E) * exp((E_D/k) * (1/T_opt - 1/temp))))
-}
-
-# Define a function to generate the Schoolfield basis
-schoolfield_basis <- function(data, x_var, J_ref, E, E_D, T_opt) {
-  x <- data[[x_var]]
-  basis <- schoolfield_smooth(x, J_ref, E, E_D, T_opt)  # Ensure correct function call here
-  return(basis)
-}
-
 # Wrapper function to fit the GAM model with Schoolfield parameters and smoothing term for conductance
 fit_schoolfield_gam <- function(data, x_var, y_var, cond_var,  T_ref = 25, start_params) {
   # Objective function to minimize (negative log-likelihood)
@@ -272,20 +221,6 @@ fit_results$opt_params
 ####This is what Liu et al. did though...
 #####################
 
-schoolfield.fit = read.csv("outputs/discard.schoolfield.SANW.csv")%>%
-  rename(curveid = curveID)%>%
-  select(curveid, T_opt,J_ref, E, E_D,breadth)%>%
-  rename(school_breadth = breadth)%>%
-  rename(T_opt.s = T_opt)
-mjcschoolfield.fit = read.csv("MJCschoolfield.fit.csv")%>%
-  rename(curveid = curveID)%>%
-  select(curveid, T_opt,J_ref, E, E_D,breadth)%>%
-  rename(mjcschool_breadth = breadth)%>%
-  rename(T_opt.m = T_opt)
-weibull.fit = read.csv("outputs/discard.weibull.SANW.csv")%>%
-  rename(curveid = curveID)%>%
-  rename(T_opt.w = T_opt)
-
 # Define the Schoolfield model function
 schoolfield <- function(temp, J_ref, E, E_D, T_opt, T_ref = 25) {
   k <- 8.62e-5            # Boltzmann's constant (eV K-1)
@@ -308,17 +243,7 @@ mjcschoolfield <- function(temp, J_ref, E, E_D, T_opt, T_ref = 25, Tair) {
   return((J_ref * exp(E * (1 / (k * T_ref) - 1 / (k * temp))) / (1 + E / (E_D - E) * exp((E_D / k) * (1 / T_opt - 1 / temp)))) * VPD)
 }
 
-# Merge dat1 with schoolfield.fits based on curveid
-dats <- dat %>%
-  left_join(schoolfield.fit, by = "curveid")%>%
-  left_join(weibull.fit, by = "curveid")
 
-# Calculate the predicted values using the Schoolfield model
-dats <- dats %>%
-  mutate(predicted = schoolfield(tleaf, J_ref, E, E_D, T_opt.s))
-# Calculate the predicted values using the MJCschoolfield model
-dats <- dats %>%
-  mutate(predicted.mjc = mjcschoolfield(tleaf, J_ref, E, E_D, T_opt.w,Tair = tair))
 
 # Define the function to fit the GAM model and extract T_opt and curve breadth
 fit_gam_with_schoolfield <- function(data, x_var, y_var, curveID_var) {

@@ -1,28 +1,11 @@
-# Libraries
-library(dplyr)
-library(tidyverse)
-library(ggplot2)
-library(car)
-library(stringr)
-library(nls.multstart)
-library(nlstools)
-library(data.table)
-library(mgcv)
-library(mgcViz)
-library(gratia)
-library(patchwork)
-library(pacman)
-library(data.table)
-library(lubridate)
-library(gt)
-library(cowplot)
-library(grid)
-library(gridExtra)
+# Purpose: Load and organize data for modelling preparation
+# Plots:  
+# Dependencies:
+# Outputs: "modelling_dat.csv"
 
-pacman::p_load(tidyverse,data.table,
-               mgcv,mgcViz,
-               gratia,
-               patchwork) 
+pacman::p_load(tidyverse,data.table,dplyr,tidyverse,ggplot2,car,stringr,nls.multstart,nlstools,
+               mgcv,mgcViz,data.table,pacman,lubridate,gt,cowplot,grid,gridExtra,lme4,knitr,
+               gratia,kableExtra,patchwork) 
 
 # Data import =================================
 dat <- read_csv("outputs/raw.discardHooks_data.csv")
@@ -32,19 +15,10 @@ weibull.topts.disc <- weibull.topts.disc %>%
   select(curveID, T_opt,getbreadth_90)%>%
   rename(breadth_95 = getbreadth_90)
 
-#Data for hooks ==============================
-weibull.cuthooks.raw <- read_csv("outputs/rawData.at.subset2.SANW.csv")
-weibull.cuthooks <- weibull.cuthooks.raw %>%
-  select(curveID)
-weibull.cuthooks <- distinct(weibull.cuthooks)
+school.topts.disc <- read_csv("outputs/discard.schoolfield.SANW.csv")
+school.topts.disc <- school.topts.disc %>%
+  select(curveID, T_opt)
 
-onlyhooks <- anti_join(weibull.cuthooks, weibull.topts.disc, by = "curveID") %>%
-  select(curveID)
-
-raw.hooks <- semi_join(weibull.cuthooks.raw, onlyhooks, by = "curveID")
-
-#dat = raw.hooks
-#=============================================
 
 Faster_Key = read.csv("data/Faster_Key.csv")%>%
   rename(curveID = Obs)
@@ -52,21 +26,22 @@ norway_key = read.csv("data/Norway.Key.csv")
 dat <- left_join(dat, Faster_Key, by = "curveID")
 dat<-left_join(dat,norway_key,by="curveID")
 dat <- left_join(dat, weibull.topts.disc, by = "curveID")
+dat <- left_join(dat, school.topts.disc, by = "curveID")
 dat <- dat %>%
-  select(Date.y,Date.measured.x, curveID,site.x,site.y, Elevation.masl,Elevation.y, T_opt,breadth_95,Species.y,taxon, Individual.y, BarcodeLeaf.y, hhmmss, Tleaf, A, gsw, Ci, Ca, Emm, VPDleaf, Tair, CO2_r, CO2_s)%>%
+  select(Date.y,Date.measured.x, curveID,site.x,site.y, Elevation.masl,Elevation.y, T_opt.x,breadth_95,T_opt.y,Species.y,taxon, Individual.y, BarcodeLeaf.y, hhmmss, Tleaf, A, gsw, Ci, Ca, Emm, VPDleaf, Tair, CO2_r, CO2_s)%>%
   mutate(Elevation = ifelse(is.na(Elevation.y), Elevation.masl, Elevation.y)) %>%
   mutate(site.y = site.y + 5)%>%
   mutate(site = ifelse(is.na(site.x), site.y, site.x))%>%
   mutate(Species = ifelse(is.na(Species.y), taxon, Species.y))%>%
   mutate(Date = ifelse(is.na(Date.y), Date.measured.x,Date.y))%>%
-  select(Date, curveID,site, Elevation, T_opt,breadth_95,Species, Individual.y, BarcodeLeaf.y, hhmmss, Tleaf, A, gsw, Ci, Ca, Emm, VPDleaf, Tair, CO2_r, CO2_s)
+  select(Date, curveID,site, Elevation, T_opt.x,breadth_95,T_opt.y,Species, Individual.y, BarcodeLeaf.y, hhmmss, Tleaf, A, gsw, Ci, Ca, Emm, VPDleaf, Tair, CO2_r, CO2_s)
 
 
 dat <- as.data.table(dat)
 dat[is.na(Species), Species := "hypoxis_costata"]
 # Rename columns in Dat to remain consistent with program script
 names(dat) <- c(
-  "date", "curveID","site", "elevation","weib.Topt","weib.breadth", "species", "rep", "leaf", "time", "tleaf", "photo",
+  "date", "curveID","site", "elevation","weib.Topt","weib.breadth","School.Topt", "species", "rep", "leaf", "time", "tleaf", "photo",
   "cond", "ci", "ca", "trmmol", "vpdl", "tair", "co2r", "co2s"
 )
 
@@ -112,6 +87,8 @@ species_summary <- dat %>%
 dat <- dat %>% mutate(mg = factor(paste(species,rep,leaf)))%>%
   mutate(country = case_when(curveid > 1000~"Norway",curveid < 1000~"SAfrica"))
 
+write.csv(dat, "modelling_dat.csv")
+
 ###############
 ###############
 ## Theme ============
@@ -144,4 +121,19 @@ fn_theme <- function (base_size = 12, base_family = "", base_line_size = base_si
           legend.spacing.y = unit(0.01, 'cm'),
           complete = TRUE)
 }
+schoolfield.fit = read.csv("outputs/discard.schoolfield.SANW.csv")%>%
+  rename(curveid = curveID)%>%
+  select(curveid, T_opt,J_ref, E, E_D,breadth)%>%
+  rename(school_breadth = breadth)%>%
+  rename(T_opt.s = T_opt)
+weibull.fit = read.csv("outputs/discard.weibull.SANW.csv")%>%
+  rename(curveid = curveID)%>%
+  rename(T_opt.w = T_opt)
+# Merge dat1 with schoolfield.fits based on curveid
+dats <- dat %>%
+  left_join(schoolfield.fit, by = "curveid")%>%
+  left_join(weibull.fit, by = "curveid")
 
+# Calculate the predicted values using the Schoolfield model
+dats <- dats %>%
+  mutate(predicted = schoolfield(tleaf, J_ref, E, E_D, T_opt.s))

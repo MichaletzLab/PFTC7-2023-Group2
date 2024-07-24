@@ -1,3 +1,10 @@
+# Purpose: Fit gam models with all combinations of relevant variables
+# Plots:  Plot partial effects for four gam models
+# Dependencies: configure.datfile.R
+# Outputs: "GAM_Model_Fits.pdf"
+
+
+
 # Function to fit GAM models
 fit_gam <- function(data, response, predictors) {
   gam_formula <- as.formula(paste(response, "~", paste(sapply(predictors, function(x) paste("s(", x, ", bs='ts', k=5)")), collapse = "+")))

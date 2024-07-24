@@ -1,5 +1,10 @@
-###########      NORWAY        ###############
+# Purpose: Check correlations
+# Plots:  plots of topt, breadth, Ea and Ed vs. air temperature as well as supplementary figures
+# Dependencies: 
+# Outputs: "TempSummary.csv"
 
+
+###########      NORWAY        ###############
 norwayTemps=read.csv("data/PFTC6_microclimate_2022.csv")
 
 norwayTemps <- norwayTemps %>%
@@ -28,7 +33,6 @@ summaryNorwayTemps = norwayTemps%>%
 
 
 ###########      S. Africa        ###############
-
 tomst = read_csv("data/PFTC7_Tomst_Data.csv")
 tomst <- tomst %>%
   mutate(Elevation = case_when(
@@ -60,3 +64,27 @@ summarySAfricaTemps$site = as.numeric(summarySAfricaTemps$site)
 
 ###########      Combine files       ###############
 TempSummary = bind_rows(summarySAfricaTemps,summaryNorwayTemps)
+write.csv(TempSummary,"outputs/TempSummary.csv")
+
+#####################################
+#Check SAfrica data to see if site2 temperatures have high predictive power of T_opt and other parametners
+#Using site2 since it is nearly the same location as measurements occured.
+
+# Calculate average daily air temperature at site 2
+temp_summary <- tomst %>%
+  filter(site == "2") %>%
+  group_by(date) %>%
+  summarise(avg_air_temp = mean(AirTemp, na.rm = TRUE))
+
+discard.weibull.2temps <- read_csv("outputs/discard.weibull.SANW.csv") %>%
+  filter(site < 6) %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"))  # Ensure Date is in Date format
+
+# Join the average daily air temperature for site 2 with discard.weibull
+discard.weibull.2temps <- discard.weibull.2temps %>%
+  left_join(temp_summary, by = c("Date" = "date")) %>%
+  rename(site2Temp = avg_air_temp)%>%
+  filter(!is.na(site2Temp))
+
+summary(lm(T_opt~site2Temp, data=discard.weibull.2temps))
+

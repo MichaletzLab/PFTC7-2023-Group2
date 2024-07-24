@@ -62,6 +62,37 @@ summary_table <- data.frame(
   sm_concurvity_vpd = c("NA","NA","NA","NA","NA",sconc.ave.20,"NA","NA",sconc.ave.50,"NA")
 )
 
+ESA.summary.table <- data.frame(
+  model = c("Weibull", "Schoolfield", "s(tleaf)", "s(tleaf) + s(vpd)", "s(tleaf) + s(gsw)"),
+  stat.method = c("NLS", "NLS", "GAM", "GAM", "GAM"),
+  sum_AIC = c(weibull.AIC, schoolfield.AIC, mod4.AIC, mod5.AIC, mod6.AIC),
+  mean_rsq = c(weibull.rsq, schoolfield.rsq, mod4.rsq, mod5.rsq, mod6.rsq),
+  full_concurvity = c("NA", "NA", conc.ave.4, conc.ave.5, conc.ave.6),
+  sm_concurvity_tleaf = c("NA", "NA", sconc.ave.4, sconc.ave.5, sconc.ave.6),
+  sm_concurvity_gsw = c("NA", "NA", "NA", "NA", sconc.ave.60),
+  sm_concurvity_vpd = c("NA", "NA", "NA", sconc.ave.50, "NA")
+)
+
+ESA.summary.table <- ESA.summary.table %>%
+  select(-full_concurvity) %>%
+  mutate(across(c(sum_AIC, mean_rsq, sm_concurvity_tleaf, sm_concurvity_gsw, sm_concurvity_vpd),
+                ~ ifelse(is.na(as.numeric(.)), NA, sprintf("%.3f", as.numeric(.)))))
+
+# Create the publication-ready table
+kable(ESA.summary.table, 
+      col.names = c("Model", "Method", "Sum AIC", "Mean R²", 
+                    "Smooth Concurvity (Tleaf)", "Smooth Concurvity (Gsw)", "Smooth Concurvity (VPD)"),
+      format = "html") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                position = "left") %>%
+  column_spec(3:7, width = "3cm") %>%
+  add_header_above(c(" " = 2, "Statistics" = 5)) %>%
+  kable_styling(latex_options = c("striped", "scale_down"))
+
+
+
+
 
 # Extract necessary values from the model fit
 new_model_AIC <- GAM.SS.tleaf.cond.fit$AIC

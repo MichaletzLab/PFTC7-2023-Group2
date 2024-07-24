@@ -1,4 +1,10 @@
+# Purpose: Plot paper figures
+# Plots:  plots of topt, breadth, Ea and Ed vs. air temperature as well as supplementary figures
+# Dependencies:
+# Outputs:
+
 ############## Load Data: ##############
+TempSummary <- read_csv("outputs/TempSummary.csv")
 discard.weibull <- read_csv("outputs/discard.weibull.SANW.csv")%>%
   left_join(TempSummary, by="site")
 discard.weibull$curveID = as.numeric(discard.weibull$curveID)
@@ -13,6 +19,34 @@ topts.gam.add = read.csv("gam_fits_add.csv")%>%
   select(curveID, tleaf_cond_breadth)
 discard.weibull <- left_join(discard.weibull, topts.gam.add, by="curveID")
 
+############## Make a violin plot of air temp vs. elevation: ##############
+elev.air.plot <- ggplot(discard.weibull, aes(x = factor(Elevation), y = AirTemp, fill = factor(Elevation))) +
+  geom_violin(trim = FALSE) +
+  scale_fill_viridis_d(name = "Elevation (m)") +
+  labs(x = "Elevation (m)", y = "Air Temperature (°C)") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    text = element_text(size = 17),
+    axis.title.x = element_text(size = 15),
+    axis.title.y = element_text(size = 15),
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 14)
+  )
+
+# Calculate the linear regression model to extract p-value
+model.airelev <- lm(AirTemp ~ Elevation + factor(country), data = discard.weibull)
+p_value <- summary(model.airelev)$coefficients[2, 4]
+
+# Format the p-value
+formatted_p_value <- sprintf("p-value << 0.001")
+
+# Annotate the plot with the p-value
+elev.air.plot <- elev.air.plot +
+  annotate("text", x = Inf, y = Inf, label = formatted_p_value, 
+           hjust = 1.1, vjust = 1.5, size = 5, fontface = "italic")
+
+elev.air.plot
 
 
 ############## Elevation vs. Topt - Weibull - All data ############## 
@@ -71,16 +105,23 @@ p_values <- discard.weibull %>%
 elev.asp.plot
 
 
+############## Air temperature vs. Topt - Weibull - All data - more structure! ############## 
+model.topt <- lm(T_opt ~ AirTemp + factor(country) + factor(Species), data = discard.weibull)
+discard.weibull$predicted <- predict(model.topt, newdata = discard.weibull)
 
-############## Air temperature vs. Topt - Weibull - All data ############## 
+# Calculate the R-squared value
+rsq <- summary(model.topt)$r.squared
+formatted_rsq <- sprintf("r² = %.3f", rsq)
+
+# Update the plot
 AT.plot <- ggplot(discard.weibull, aes(x = AirTemp, y = T_opt, color = Elevation)) +
-  geom_smooth(method = "lm", se = TRUE, aes(group = 1), color = "black") +
   geom_point(position = position_jitter(width = 2, height = 0), size = 2) +
+  geom_smooth(method = "lm", se = TRUE, aes(group = 1), color = "black") +
   scale_color_gradient(low = "orange", high = "forestgreen", name = "Elevation (m)") +
   labs(shape = "Aspect") +
   theme_classic() +
   xlab("Air Temperature (˚C)") + 
-  ylab("Topt (˚C)") +
+  ylab("T_opt (˚C)") +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
     text = element_text(size = 17),
@@ -89,15 +130,17 @@ AT.plot <- ggplot(discard.weibull, aes(x = AirTemp, y = T_opt, color = Elevation
     legend.text = element_text(size = 14),
     legend.title = element_text(size = 14)
   )
-# Calculate the linear regression model to extract p-value
-model.toptAT <- lm(T_opt ~ AirTemp, data = discard.weibull)
-p_value <- summary(model.toptAT)$coefficients[2,4]
-# Format the p-value
+
+# Calculate the p-value for the main effect of AirTemp
+p_value <- summary(model.topt)$coefficients["AirTemp", "Pr(>|t|)"]
 formatted_p_value <- sprintf("p-value = %.3f", p_value)
-# Annotate the plot with the p-value
+
+# Annotate the plot with the p-value and R-squared value
 (AT.plot <- AT.plot +
-    annotate("text", x = Inf, y = Inf, label = formatted_p_value, 
-             hjust = 1.1, vjust = 25, size = 5))
+  annotate("text", x = Inf, y = Inf, label = paste(formatted_p_value, formatted_rsq, sep = "\n"), 
+           hjust = 1.1, vjust = 1.5, size = 5, fontface = "italic"))
+
+
 
 
 ############## Elevation vs. breadth - Weibull - All data ############## 
@@ -183,15 +226,23 @@ elev.b.plot
 
 
 ############## Air temperature vs. breadth - Weibull - All data ############## 
-breadth.AT <- discard.weibull %>%
-  ggplot(aes(x = AirTemp, y = getbreadth_90, color=Elevation)) +
-  geom_point(size = 2.5, 
-             position = position_jitter(width = 2, height = 0)) +
-  geom_smooth(method = 'lm', se = TRUE, color = "black") +
+model.b <- lm(getbreadth_90 ~ AirTemp + factor(country) + factor(Species), data = discard.weibull)
+discard.weibull$predicted <- predict(model.b, newdata = discard.weibull)
+
+# Calculate the R-squared value
+rsq <- summary(model.b)$r.squared
+formatted_rsq <- sprintf("r² = %.3f", rsq)
+
+# Update the plot
+b.plot <- ggplot(discard.weibull, aes(x = AirTemp, y = getbreadth_90, color = Elevation)) +
+  geom_point(position = position_jitter(width = 2, height = 0), size = 2) +
+  geom_smooth(method = "lm", se = TRUE, aes(group = 1), color = "black") +
   scale_color_gradient(low = "orange", high = "forestgreen", name = "Elevation (m)") +
-  xlab("Air temperature (˚C)") + ylab("Thermal breadth (˚C)") +
   theme_classic() +
+  xlab("Air Temperature (˚C)") + 
+  ylab("Thermal breadth (˚C)") +
   theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
     text = element_text(size = 17),
     axis.title.x = element_text(size = 15),
     axis.title.y = element_text(size = 15),
@@ -199,14 +250,15 @@ breadth.AT <- discard.weibull %>%
     legend.title = element_text(size = 14)
   )
 
-model.breadth.AT <- lm(getbreadth_90 ~ AirTemp, data = discard.weibull)
-p_value <- summary(model.breadth.AT)$coefficients[2,4]
-# Format the p-value
+# Calculate the p-value for the main effect of AirTemp
+p_value <- summary(model.b)$coefficients["AirTemp", "Pr(>|t|)"]
 formatted_p_value <- sprintf("p-value = %.3f", p_value)
-# Annotate the plot with the p-value
-(breadth.AT <- breadth.AT +
-    annotate("text", x = Inf, y = Inf, label = formatted_p_value, 
-             hjust = 1.1, vjust = 25, size = 5))
+
+# Annotate the plot with the p-value and R-squared value
+(b.plot <- b.plot +
+    annotate("text", x = Inf, y = Inf, label = paste(formatted_p_value, formatted_rsq, sep = "\n"), 
+             hjust = 1.1, vjust = 1.5, size = 5, fontface = "italic"))
+
 
 
 
@@ -266,32 +318,39 @@ elev.E.plot
 
 
 
-
 ############## Air temperature vs. E - Schoolfield - All data ############## 
-E.AT <- discard.schoolfield %>%
-  ggplot(aes(x = AirTemp, y = E, color=Elevation)) +
-  geom_point(size = 2.5, 
-             position = position_jitter(width = 2, height = 0)) +
-  geom_smooth(method = 'lm', se = TRUE, color = "black") +
+model.E <- lm(E ~ AirTemp + factor(country) + factor(Species), data = discard.schoolfield)
+discard.schoolfield$predicted <- predict(model.E, newdata = discard.schoolfield)
+
+# Calculate the R-squared value
+rsq <- summary(model.E)$r.squared
+formatted_rsq <- sprintf("r² = %.3f", rsq)
+
+# Update the plot
+(E.plot <- ggplot(discard.schoolfield, aes(x = AirTemp, y = E, color = Elevation)) +
+  geom_point(position = position_jitter(width = 2, height = 0), size = 2) +
+  geom_smooth(method = "lm", se = TRUE, aes(group = 1), color = "black") +
   scale_color_gradient(low = "orange", high = "forestgreen", name = "Elevation (m)") +
-  xlab("Air temperature (˚C)") + ylab("Activation energy") +
   theme_classic() +
+  xlab("Air Temperature (˚C)") + 
+  ylab("Activation energy (eV)") +
   theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
     text = element_text(size = 17),
     axis.title.x = element_text(size = 15),
     axis.title.y = element_text(size = 15),
     legend.text = element_text(size = 14),
     legend.title = element_text(size = 14)
-  )
+  ))
 
-model.E.AT <- lm(E ~ AirTemp, data = discard.schoolfield)
-p_value <- summary(model.E.AT)$coefficients[2,4]
-# Format the p-value
+# Calculate the p-value for the main effect of AirTemp
+p_value <- summary(model.E)$coefficients["AirTemp", "Pr(>|t|)"]
 formatted_p_value <- sprintf("p-value = %.3f", p_value)
-# Annotate the plot with the p-value
-(E.AT <- E.AT +
-    annotate("text", x = Inf, y = Inf, label = formatted_p_value, 
-             hjust = 1.1, vjust = 25, size = 5))
+
+# Annotate the plot with the p-value and R-squared value
+(E.plot <- E.plot +
+    annotate("text", x = Inf, y = Inf, label = paste(formatted_p_value, formatted_rsq, sep = "\n"), 
+             hjust = 1.1, vjust = 1.5, size = 5, fontface = "italic"))
 
 
 
@@ -351,27 +410,35 @@ elev.Ed.plot
 
 
 ############## Air temperature vs. E_D - Schoolfield - All data ############## 
-Ed.AT <- discard.schoolfield %>%
-  ggplot(aes(x = AirTemp, y = E_D, color=Elevation)) +
-  geom_point(size = 2.5, 
-             position = position_jitter(width = 2, height = 0)) +
-  geom_smooth(method = 'lm', se = TRUE, color = "black") +
-  scale_color_gradient(low = "orange", high = "forestgreen", name = "Elevation (m)") +
-  xlab("Elevation (m)") + ylab("Deactivation energy") +
-  theme_classic() +
-  theme(
-    text = element_text(size = 17),
-    axis.title.x = element_text(size = 15),
-    axis.title.y = element_text(size = 15),
-    legend.text = element_text(size = 14),
-    legend.title = element_text(size = 14)
-  )
+model.Ed <- lm(E_D ~ AirTemp + factor(country) + factor(Species), data = discard.schoolfield)
+discard.schoolfield$predicted <- predict(model.Ed, newdata = discard.schoolfield)
 
-model.Ed.AT <- lm(E_D ~ AirTemp, data = discard.schoolfield)
-p_value <- summary(model.Ed.AT)$coefficients[2,4]
-# Format the p-value
+# Calculate the R-squared value
+rsq <- summary(model.Ed)$r.squared
+formatted_rsq <- sprintf("r² = %.3f", rsq)
+
+# Update the plot
+(Ed.plot <- ggplot(discard.schoolfield, aes(x = AirTemp, y = E_D, color = Elevation)) +
+    geom_point(position = position_jitter(width = 2, height = 0), size = 2) +
+    geom_smooth(method = "lm", se = TRUE, aes(group = 1), color = "black") +
+    scale_color_gradient(low = "orange", high = "forestgreen", name = "Elevation (m)") +
+    theme_classic() +
+    xlab("Air Temperature (˚C)") + 
+    ylab("Deactivation energy (eV)") +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      text = element_text(size = 17),
+      axis.title.x = element_text(size = 15),
+      axis.title.y = element_text(size = 15),
+      legend.text = element_text(size = 14),
+      legend.title = element_text(size = 14)
+    ))
+
+# Calculate the p-value for the main effect of AirTemp
+p_value <- summary(model.Ed)$coefficients["AirTemp", "Pr(>|t|)"]
 formatted_p_value <- sprintf("p-value = %.3f", p_value)
-# Annotate the plot with the p-value
-(Ed.AT <- Ed.AT +
-    annotate("text", x = Inf, y = Inf, label = formatted_p_value, 
-             hjust = 1.1, vjust = 25, size = 5))
+
+# Annotate the plot with the p-value and R-squared value
+(Ed.plot <- Ed.plot +
+    annotate("text", x = Inf, y = Inf, label = paste(formatted_p_value, formatted_rsq, sep = "\n"), 
+             hjust = 1.1, vjust = 1.5, size = 5, fontface = "italic"))
