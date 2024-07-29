@@ -10,12 +10,12 @@ pacman::p_load(tidyverse,data.table,dplyr,tidyverse,ggplot2,car,stringr,nls.mult
 # Data import =================================
 dat <- read_csv("outputs/raw.discardHooks_data.csv")
 
-weibull.topts.disc <- read_csv("outputs/discard.weibull.SANW.csv")
+weibull.topts.disc <- read_csv("weibull.discard.hooks.SANW.csv")
 weibull.topts.disc <- weibull.topts.disc %>%
   select(curveID, T_opt,getbreadth_90)%>%
   rename(breadth_95 = getbreadth_90)
 
-school.topts.disc <- read_csv("outputs/discard.schoolfield.SANW.csv")
+school.topts.disc <- read_csv("schoolfield.discard.hooks.SANW.csv")
 school.topts.disc <- school.topts.disc %>%
   select(curveID, T_opt)
 
@@ -121,19 +121,19 @@ fn_theme <- function (base_size = 12, base_family = "", base_line_size = base_si
           legend.spacing.y = unit(0.01, 'cm'),
           complete = TRUE)
 }
-schoolfield.fit = read.csv("outputs/discard.schoolfield.SANW.csv")%>%
-  rename(curveid = curveID)%>%
-  select(curveid, T_opt,J_ref, E, E_D,breadth)%>%
-  rename(school_breadth = breadth)%>%
-  rename(T_opt.s = T_opt)
-weibull.fit = read.csv("outputs/discard.weibull.SANW.csv")%>%
-  rename(curveid = curveID)%>%
-  rename(T_opt.w = T_opt)
-# Merge dat1 with schoolfield.fits based on curveid
-dats <- dat %>%
-  left_join(schoolfield.fit, by = "curveid")%>%
-  left_join(weibull.fit, by = "curveid")
-
-# Calculate the predicted values using the Schoolfield model
-dats <- dats %>%
-  mutate(predicted = schoolfield(tleaf, J_ref, E, E_D, T_opt.s))
+# schoolfield.fit = read.csv("outputs/discard.schoolfield.SANW.csv")%>%
+#   rename(curveid = curveID)%>%
+#   select(curveid, T_opt,J_ref, E, E_D,breadth)%>%
+#   rename(school_breadth = breadth)%>%
+#   rename(T_opt.s = T_opt)
+# weibull.fit = read.csv("outputs/discard.weibull.SANW.csv")%>%
+#   rename(curveid = curveID)%>%
+#   rename(T_opt.w = T_opt)
+# # Merge dat1 with schoolfield.fits based on curveid
+# dats <- dat %>%
+#   left_join(schoolfield.fit, by = "curveid")%>%
+#   left_join(weibull.fit, by = "curveid")
+# 
+# # Calculate the predicted values using the Schoolfield model
+# dats <- dats %>%
+#   mutate(predicted = schoolfield(tleaf, J_ref, E, E_D, T_opt.s))

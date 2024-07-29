@@ -1,3 +1,5 @@
+#dependencies: Run CleanNorway.R first
+
 # Code to read LI-6800 files
 library(dplyr)
 library(tidyverse)
@@ -11,31 +13,24 @@ library(tidylog)
 library(readxl)
 
 # Set wd to main R project
-setwd("../code")
-source("correct_6800_functions.R")
-source("match_correct.R")
-source("noneq_correct_full.R")
-source("curve_fitting_michaletz_2021.R")
-source("curve_fitting_criteria.R")
-#source("fit.weibull.b.R")
-source("cut.hooks.R")
-source("Discard.Hooks.R")
-source("Spname_fixes.R")
-source("fit_mod_schoolfield.R")
-source("fit_weibull_breadth.R")
+source("code/correct_6800_functions.R")
+source("code/match_correct.R")
+source("code/noneq_correct_full.R")
+source("code/curve_fitting_michaletz_2021.R")
+source("code/curve_fitting_criteria.R")
+source("code/cut.hooks.R")
+source("code/Discard.Hooks.R")
+source("code/Spname_fixes.R")
+source("code/fit_mod_schoolfield.R")
+source("code/fit_weibull_breadth.R")
 
-setwd("../data/FasterLicor")
+setwd("../data/FasterLicor") ##Right now these are actually on desktop
 
 # load list of file paths for Licor data
 at.files = list.files(full.names=T)
 
 # extract list of IDs from the file names
 at.ids <- lapply(at.files, function(x)strsplit(x, split = "[.]")[[1]][3]) #save the individual IDs, extracted from file names
-
-
-#tst=read_6800_with_BLC("2023-12-16-1002_logdata.123")
-#tst=read_6800_with_BLC("2023-12-11-0756_logdata.59")
-#tst=read_6800_with_BLC("2023-12-06-1312_logdata.3")
 
 # LOAD LICOR FILES
 file.x <- list()
@@ -75,9 +70,10 @@ file.x <- file.x[lengths(file.x) != 0] # remove empty placeholders
 at.df <- do.call(bind_rows, file.x) # combine files into 1 dataframe
 at.df <- subset(at.df, A >= -5) # remove unreasonable A values
 
-setwd("../../data")
+#Change working directory back to project here!
+
 # Add in the key for curveID and barcodes from photosynthesis group
-at.meta = read.csv("Faster_Key.csv") %>%
+at.meta = read.csv("data/Faster_Key.csv") %>%
   rename(curveID = 1, site = SiteID)
 at.meta$curveID <- as.character(at.meta$curveID)
 at.meta$site <- as.character(at.meta$site)
@@ -88,21 +84,21 @@ at.all <- left_join(at.df, at.meta, by="curveID")
 at.all$`Î”Pcham` <- at.all$Î.Pcham
 
 # Now join the leaf trait pftc7 file with our file by matching the barcodes
-at.meta.full= read.csv("PFTC7_SA_cleanish_traits_2023.csv")
+at.meta.full= read.csv("data/PFTC7_SA_cleanish_traits_2023.csv")
 
 
 ####### NEW 5.8.24
 #Now do the species name correction
 FT <- at.meta.full
-tochange <- read_excel("Heli_name_changes.xlsx")
+tochange <- read_excel("data/Heli_name_changes.xlsx")
 FT_step_1 <- correct_leaf_ID(data = FT, changes = tochange, data_ID_column = "id", data_species_column = "species")
-heli_naming_system <- read_excel("New Helichrysum naming system.xlsx")
+heli_naming_system <- read_excel("data/New Helichrysum naming system.xlsx")
 #comm <- read_csv("community_data_names_cleaned.csv")
 
 FT_new_name_system <- new_heli_naming_system(data = FT_step_1, naming_system = heli_naming_system, data_species_column = "species")
 #comm_new_name_system <- new_heli_naming_system(data = comm, naming_system = heli_naming_system, data_species_column = "species")
 
-write.csv(FT_new_name_system, "PFTC7_SA_clean_traits_08May2024.csv") # write a new file with the finalized data
+write.csv(FT_new_name_system, "data/PFTC7_SA_clean_traits_08May2024.csv") # write a new file with the finalized data
 #write.csv(comm_new_name_system, "PFTC7_SA_clean_community_08May2024.csv")
 
 # Create a new dataset that has a new BarcodeLeaf column that matches id
@@ -128,14 +124,15 @@ at.all.n = merged_df %>%
 at.corr = calc_licor6800(at.all.n)
 # Apply match offset correction
 at.corr = match_correct(at.corr) 
-
+#write.csv(at.corr, "data/at.corr_deletethis.csv")
+#at.corr=read.csv("data/at.corr_deletethis.csv")
 # Apply nonequilibrium correction just to the rows with UseDynamic set to False
-  # The Licor has different settings depnding on the Flow/Flow_r rate. These can be found directly on the machine.
+  # The Licor has different settings depending on the Flow/Flow_r rate. These can be found directly on the machine.
 at.corr.noneq.1 = at.corr%>%
-  filter(is.na(UseDynamic))%>%
-  filter(Flow>= 598 & Flow<= 601)%>%
-  filter(Flow_r>= 518 & Flow_r<= 600)%>%
-  noneq_correct_full(.,dt1_c = 1.76, dt2_c = 1.24, aV_c = 64.4, dt1_h = 3.44, dt2_h = 5.83, aV_h = 94)
+   filter(is.na(UseDynamic))%>%
+   filter(Flow>= 598 & Flow<= 601)%>%
+   filter(Flow_r>= 518 & Flow_r<= 600)%>%
+   noneq_correct_full(.,dt1_c = 1.76, dt2_c = 1.24, aV_c = 64.4, dt1_h = 3.44, dt2_h = 5.83, aV_h = 94)
 at.corr.noneq.2 = at.corr%>%
   filter(is.na(UseDynamic))%>%
   filter(Flow>= 398 & Flow<= 401)%>%
@@ -149,19 +146,19 @@ at.corr.noneq.3 = at.corr%>%
 at.corr.noneq.4 = at.corr%>%
   filter(!is.na(UseDynamic))
 
-at.corr.noneq.SA <- bind_rows(at.corr.noneq.1, at.corr.noneq.2, at.corr.noneq.3, at.corr.noneq.4)
-write.csv(at.corr.noneq.SA, "raw.at.corr.noneq.SA.csv")
+at.corr.noneq.SA <- bind_rows(at.corr.noneq.2, at.corr.noneq.3, at.corr.noneq.4)
+write.csv(at.corr.noneq.SA, "data/raw.at.corr.noneq.SA.csv")
 
-at.corr.noneq.SA <- read.csv("raw.at.corr.noneq.SA.csv")
-at.corr.noneq.norway <- read.csv("raw.at.corr.noneq.norway.csv")
+at.corr.noneq.SA <- read.csv("data/raw.at.corr.noneq.SA.csv")
+at.corr.noneq.norway <- read.csv("data/raw.at.corr.noneq.norway.csv")
 
 cols_to_convert = c("P1_dur","P1_Fmax","P2_dur","P2_dQdt","P3_dur","P3_ΔF","ID.1","Fo.1","F1","T.F1","T.HIR","F2", "T.F2")
 at.corr.noneq.norway <- at.corr.noneq.norway %>%
   mutate(across(all_of(cols_to_convert), as.character))
 
 at.corr.noneq.SA.NW <- bind_rows(at.corr.noneq.SA, at.corr.noneq.norway)
-write.csv(at.corr.noneq.SA.NW, "at.corr.noneq.SA.NW.csv")
-setwd("../outputs")
+write.csv(at.corr.noneq.SA.NW, "data/at.corr.noneq.SA.NW.csv")
+
 #write.csv(at.corr.noneq, "SAforRIA.dat.csv")
 
 #if at.subset1 or 2 fails, run install.packages("grDevices") and library(grDevices) and it fixes...
@@ -171,25 +168,35 @@ at.subset1 = cut.multimodal(at.subset)
 at.subset2 = cut.topt.out.of.bounds(at.subset1)
 at.subset3 = discard.hooks(at.subset2, 0.01) ##47 is stubborn...
 #at.subset4 = cut.hooks(at.subset2,"truncate_plots.pdf")
-write.csv(at.subset3, 'raw.discardHooks_data.csv', row.names = F)
+write.csv(at.subset3, 'outputs/raw.discardHooks_data.csv', row.names = F)
 #write.csv(at.subset4, 'raw.cutHooks_data.csv', row.names = F)
 
-write.csv(at.subset2, 'rawData.at.subset2.SANW.csv', row.names = F)
+#write.csv(at.subset2, 'outputs/rawData.at.subset2.SANW.csv', row.names = F)
 
-species.key = read.csv("Faster_Key.csv")
-species.key.n=read.csv("trait.data.with.area.csv")
+species.key = read.csv("data/Faster_Key.csv")%>%
+  rename(curveID=Obs)%>%
+  rename(site=SiteID)
+species.key.n=read.csv("data/Norway.Key.csv")%>%
+  mutate(site=site+5)%>%
+  rename(Elevation = Elevation.masl)
 
 results.discard.hooks = fit_weibull_breadth(at.subset3) #also if this fails try the grDevices thing
 results.discard.hooks$curveID = as.numeric(results.discard.hooks$curveID)
 results_meta_discard.hooks = left_join(results.discard.hooks, species.key, by="curveID")
 results_meta_discard.hooks = left_join(results_meta_discard.hooks,species.key.n, by = "curveID")
-write.csv(results_meta_discard.hooks, 'weibull.discard.hooks.csv', row.names = F)
+results_meta_discard.hooks = results_meta_discard.hooks%>%
+  #mutate(country = case_when(curveID > 1000~"Norway",curveID < 1000~"SAfrica"))%>%
+  mutate(site = coalesce(site.x, site.y))%>%
+  mutate(Elevation = coalesce(Elevation, Elevation.masl))
+write.csv(results_meta_discard.hooks, 'weibull.discard.hooks.SANW.csv', row.names = F)
 
 Sfield.results.discard.hooks =fit_mod_schoolfield(at.subset3 %>% select(Tleaf, A, curveID), x = "Tleaf", y = "A", T_ref = 25)
 Sfield.results.discard.hooks$curveID = as.numeric(Sfield.results.discard.hooks$curveID)
 Sfield.results_meta_discard.hooks = left_join(Sfield.results.discard.hooks, species.key, by="curveID")
 Sfield.results_meta_discard.hooks = left_join(Sfield.results_meta_discard.hooks,species.key.n, by = "curveID")
-write.csv(Sfield.results_meta_discard.hooks, 'schoolfield.discard.hooks.csv', row.names = F)
+Sfield.results_meta_discard.hooks = Sfield.results_meta_discard.hooks%>%
+  mutate(country = case_when(curveID > 1000~"Norway",curveID < 1000~"SAfrica"))
+write.csv(Sfield.results_meta_discard.hooks, 'schoolfield.discard.hooks.SANW.csv', row.names = F)
 
 #results.cut.hooks = fit_weibull_breadth(at.subset4)
 #results.cut.hooks$curveID = as.numeric(results.cut.hooks$curveID)

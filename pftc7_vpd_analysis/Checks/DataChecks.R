@@ -38,24 +38,23 @@ formatted_rsq1 <- sprintf("r² = %.3f", rsq)
 
 
 ## Plot tleaf vs gsw==================
-tleaf_out <- dat %>% 
-  ggplot(aes(cond,tleaf))+
-  geom_point(alpha=0.1)+
-  labs(x = "Leaf Temperature (˚C)",
-       y = "Conductance") + 
-  fn_theme(); a_out
+model.gsw.t <- gam(cond ~ s(tleaf, bs = 'ts', k = 5), data = dat)
 
-ggsave(tleaf_out, 
-       filename=
-         paste0("pftc7_vpd_analysis/figures/gsw.vs.tleaf_",
-                Sys.Date(),
-                ".png"),
-       device = grDevices::png,
-       width=30,
-       height=30,
-       units='cm',
-       scale = 0.5,
-       dpi=600)
+# Extract the R-squared value
+rsq <- summary(model.gsw.t)$r.sq
+formatted_rsq1 <- sprintf("r² = %.3f", rsq)
+
+# Create the plot
+(p_out <- dat %>% 
+    ggplot(aes(tleaf, cond)) +
+    geom_point(alpha = 0.2) +
+    geom_smooth(method="lm", se=TRUE) + 
+    coord_cartesian(ylim = c(0, 0.56)) +
+    labs(x = "Leaf temperature (°C)",
+         y = expression(paste("Conductance (µmol ", CO[2], " ", m^-2, s^-1, ")"))) + 
+    theme_classic() +
+    annotate("text", x = 20, y = Inf, label = formatted_rsq1, 
+             hjust = 1.1, vjust = 1.1, size = 5, fontface = "italic"))
 
 
 ## Plot m vs. max gs.==================

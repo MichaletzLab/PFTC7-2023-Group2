@@ -5,23 +5,39 @@
 
 ############## Load Data: ##############
 TempSummary <- read_csv("outputs/TempSummary.csv")
-discard.weibull <- read_csv("outputs/discard.weibull.SANW.csv")%>%
-  left_join(TempSummary, by="site")
+discard.weibull <- read_csv("weibull.discard.hooks.SANW.csv")%>%
+  left_join(TempSummary, by="site")%>%
+  mutate(Elevation = coalesce(Elevation, Elevation.masl))%>%
+  mutate(Species = coalesce(Species, taxon))
 discard.weibull$curveID = as.numeric(discard.weibull$curveID)
-discard.weibull= discard.weibull%>%
-  mutate(country = case_when(curveID > 1000~"Norway",curveID < 1000~"SAfrica"))
-discard.schoolfield <- read.csv("outputs/discard.schoolfield.SANW.csv")%>%
-  mutate(country = case_when(curveID > 1000~"Norway",curveID < 1000~"SAfrica"))%>%
-  left_join(TempSummary, by="site")
-topts.gam.add = read.csv("gam_fits_add.csv")%>%
-  mutate(country = case_when(curveid > 1000~"Norway",curveid < 1000~"SAfrica"))%>%
-  rename(curveID=curveid)%>%
-  select(curveID, tleaf_cond_breadth)
-discard.weibull <- left_join(discard.weibull, topts.gam.add, by="curveID")
+discard.schoolfield <- read.csv("schoolfield.discard.hooks.SANW.csv")%>%
+  left_join(TempSummary, by="site")%>%
+  mutate(Species = coalesce(Species, taxon))
+# topts.gam.add = read.csv("gam_fits_add.csv")%>%
+#   mutate(country = case_when(curveid > 1000~"Norway",curveid < 1000~"SAfrica"))%>%
+#   rename(curveID=curveid)%>%
+#   select(curveID, tleaf_cond_breadth)
+#discard.weibull <- left_join(discard.weibull, topts.gam.add, by="curveID")
 
 ############## Make a violin plot of air temp vs. elevation: ##############
+# Create the plot with violin plots, faceting by country, and regression lines
+# Create a function to calculate p-values for each country
+calculate_p_values <- function(df) {
+  model <- lm(AirTemp ~ Elevation, data = df)
+  p_value <- summary(model)$coefficients[2, 4]
+  formatted_p_value <- sprintf("p-value = %.3f", p_value)
+  return(formatted_p_value)
+}
+
+# Create a new column for p-values
+discard.weibull <- discard.weibull %>%
+  group_by(country) %>%
+  mutate(p_value = calculate_p_values(cur_data()))
+
+# Create the plot
 elev.air.plot <- ggplot(discard.weibull, aes(x = factor(Elevation), y = AirTemp, fill = factor(Elevation))) +
   geom_violin(trim = FALSE) +
+  stat_smooth(method = "lm", se = FALSE, color = "black", aes(group = 1)) + # Add regression line
   scale_fill_viridis_d(name = "Elevation (m)") +
   labs(x = "Elevation (m)", y = "Air Temperature (°C)") +
   theme_classic() +
@@ -32,20 +48,15 @@ elev.air.plot <- ggplot(discard.weibull, aes(x = factor(Elevation), y = AirTemp,
     axis.title.y = element_text(size = 15),
     legend.text = element_text(size = 14),
     legend.title = element_text(size = 14)
-  )
+  ) +
+  facet_wrap(~ country, scales = "free_x") # Facet by country with free x scales
 
-# Calculate the linear regression model to extract p-value
-model.airelev <- lm(AirTemp ~ Elevation + factor(country), data = discard.weibull)
-p_value <- summary(model.airelev)$coefficients[2, 4]
-
-# Format the p-value
-formatted_p_value <- sprintf("p-value << 0.001")
-
-# Annotate the plot with the p-value
+# Annotate the plot with the p-values for each country
 elev.air.plot <- elev.air.plot +
-  annotate("text", x = Inf, y = Inf, label = formatted_p_value, 
-           hjust = 1.1, vjust = 1.5, size = 5, fontface = "italic")
+  geom_text(data = discard.weibull, aes(x = Inf, y = Inf, label = "p << 0.001"),
+            hjust = 1.1, vjust = 1.5, size = 5, fontface = "italic")
 
+# Print the plot
 elev.air.plot
 
 
@@ -120,8 +131,8 @@ AT.plot <- ggplot(discard.weibull, aes(x = AirTemp, y = T_opt, color = Elevation
   scale_color_gradient(low = "orange", high = "forestgreen", name = "Elevation (m)") +
   labs(shape = "Aspect") +
   theme_classic() +
-  xlab("Air Temperature (˚C)") + 
-  ylab("T_opt (˚C)") +
+  xlab("Air temperature (˚C)") + 
+  ylab("Optimal temperature (˚C)") +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
     text = element_text(size = 17),
@@ -239,7 +250,7 @@ b.plot <- ggplot(discard.weibull, aes(x = AirTemp, y = getbreadth_90, color = El
   geom_smooth(method = "lm", se = TRUE, aes(group = 1), color = "black") +
   scale_color_gradient(low = "orange", high = "forestgreen", name = "Elevation (m)") +
   theme_classic() +
-  xlab("Air Temperature (˚C)") + 
+  xlab("Air temperature (˚C)") + 
   ylab("Thermal breadth (˚C)") +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -332,7 +343,7 @@ formatted_rsq <- sprintf("r² = %.3f", rsq)
   geom_smooth(method = "lm", se = TRUE, aes(group = 1), color = "black") +
   scale_color_gradient(low = "orange", high = "forestgreen", name = "Elevation (m)") +
   theme_classic() +
-  xlab("Air Temperature (˚C)") + 
+  xlab("Air temperature (˚C)") + 
   ylab("Activation energy (eV)") +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -423,7 +434,7 @@ formatted_rsq <- sprintf("r² = %.3f", rsq)
     geom_smooth(method = "lm", se = TRUE, aes(group = 1), color = "black") +
     scale_color_gradient(low = "orange", high = "forestgreen", name = "Elevation (m)") +
     theme_classic() +
-    xlab("Air Temperature (˚C)") + 
+    xlab("Air temperature (˚C)") + 
     ylab("Deactivation energy (eV)") +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1),

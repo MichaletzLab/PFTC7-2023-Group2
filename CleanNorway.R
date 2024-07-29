@@ -11,18 +11,16 @@ library(tidylog)
 library(readxl)
 
 # Set wd to main R project
-setwd("../code")
-source("correct_6800_functions.R")
-source("match_correct.R")
-source("noneq_correct_full.R")
-source("curve_fitting_michaletz_2021.R")
-source("curve_fitting_criteria.R")
-#source("fit.weibull.b.R")
-source("cut.hooks.R")
-source("Discard.Hooks.R")
-source("Spname_fixes.R")
-source("fit_mod_schoolfield.R")
-source("fit_weibull_breadth.R")
+source("code/correct_6800_functions.R")
+source("code/match_correct.R")
+source("code/noneq_correct_full.R")
+source("code/curve_fitting_michaletz_2021.R")
+source("code/curve_fitting_criteria.R")
+source("code/cut.hooks.R")
+source("code/Discard.Hooks.R")
+source("code/Spname_fixes.R")
+source("code/fit_mod_schoolfield.R")
+source("code/fit_weibull_breadth.R")
 
 setwd("../data/FasterLicorNorway")
 
@@ -84,7 +82,7 @@ at.df <- subset(at.df, A >= -5) # remove unreasonable A values
 
 setwd("../../data")
 # Add in the key for curveID and barcodes from photosynthesis group
-at.meta = read.csv("trait.data.with.area.csv")
+at.meta = read.csv("data/Norway.Key.csv")
 at.meta$curveID <- as.numeric(at.meta$curveID)
 at.df$curveID <- as.numeric(at.df$curveID)
 at.meta$site <- as.numeric(at.meta$site)
@@ -120,4 +118,4 @@ at.corr.noneq.norway <- at.corr.noneq.norway %>%
   rename(Elevation = Elevation.masl)%>%
   mutate(site=site+5)
 
-write.csv(at.corr.noneq.norway, "raw.at.corr.noneq.norway.csv")
+write.csv(at.corr.noneq.norway, "data/raw.at.corr.noneq.norway.csv")

@@ -73,16 +73,16 @@ write.csv(TempSummary,"outputs/TempSummary.csv")
 # Calculate average daily air temperature at site 2
 temp_summary <- tomst %>%
   filter(site == "2") %>%
-  group_by(date) %>%
+  group_by(datetime) %>%
   summarise(avg_air_temp = mean(AirTemp, na.rm = TRUE))
 
-discard.weibull.2temps <- read_csv("outputs/discard.weibull.SANW.csv") %>%
+discard.weibull.2temps <- read_csv("data/weibull.discard.hooks.csv")
   filter(site < 6) %>%
   mutate(Date = as.Date(Date, format = "%Y-%m-%d"))  # Ensure Date is in Date format
 
 # Join the average daily air temperature for site 2 with discard.weibull
 discard.weibull.2temps <- discard.weibull.2temps %>%
-  left_join(temp_summary, by = c("Date" = "date")) %>%
+  left_join(temp_summary, by = c("Date" = "datetime")) %>%
   rename(site2Temp = avg_air_temp)%>%
   filter(!is.na(site2Temp))
 
