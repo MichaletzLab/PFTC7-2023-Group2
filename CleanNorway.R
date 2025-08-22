@@ -82,7 +82,7 @@ at.df <- subset(at.df, A >= -5) # remove unreasonable A values
 
 setwd("../../data")
 # Add in the key for curveID and barcodes from photosynthesis group
-at.meta = read.csv("data/Norway.Key.csv")
+at.meta = read.csv("Norway.Key.csv")
 at.meta$curveID <- as.numeric(at.meta$curveID)
 at.df$curveID <- as.numeric(at.df$curveID)
 at.meta$site <- as.numeric(at.meta$site)
@@ -118,4 +118,4 @@ at.corr.noneq.norway <- at.corr.noneq.norway %>%
   rename(Elevation = Elevation.masl)%>%
   mutate(site=site+5)
 
-write.csv(at.corr.noneq.norway, "data/raw.at.corr.noneq.norway.csv")
+write.csv(at.corr.noneq.norway, "raw.at.corr.noneq.norway.csv")

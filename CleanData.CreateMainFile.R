@@ -11,6 +11,7 @@ library(lubridate)
 library(segmented)
 library(tidylog)
 library(readxl)
+library(rTPC)
 
 # Set wd to main R project
 source("code/correct_6800_functions.R")
@@ -168,7 +169,7 @@ at.subset1 = cut.multimodal(at.subset)
 at.subset2 = cut.topt.out.of.bounds(at.subset1)
 at.subset3 = discard.hooks(at.subset2, 0.01) ##47 is stubborn...
 #at.subset4 = cut.hooks(at.subset2,"truncate_plots.pdf")
-write.csv(at.subset3, 'outputs/raw.discardHooks_data.csv', row.names = F)
+write.csv(at.subset3, 'data/raw.discardHooks_data.csv', row.names = F)
 #write.csv(at.subset4, 'raw.cutHooks_data.csv', row.names = F)
 
 #write.csv(at.subset2, 'outputs/rawData.at.subset2.SANW.csv', row.names = F)
@@ -187,7 +188,7 @@ results_meta_discard.hooks = left_join(results_meta_discard.hooks,species.key.n,
 results_meta_discard.hooks = results_meta_discard.hooks%>%
   #mutate(country = case_when(curveID > 1000~"Norway",curveID < 1000~"SAfrica"))%>%
   mutate(site = coalesce(site.x, site.y))%>%
-  mutate(Elevation = coalesce(Elevation, Elevation.masl))
+  mutate(Elevation = coalesce(Elevation.x, Elevation.y))
 write.csv(results_meta_discard.hooks, 'weibull.discard.hooks.SANW.csv', row.names = F)
 
 Sfield.results.discard.hooks =fit_mod_schoolfield(at.subset3 %>% select(Tleaf, A, curveID), x = "Tleaf", y = "A", T_ref = 25)

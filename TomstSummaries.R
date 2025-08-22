@@ -64,7 +64,7 @@ summarySAfricaTemps$site = as.numeric(summarySAfricaTemps$site)
 
 ###########      Combine files       ###############
 TempSummary = bind_rows(summarySAfricaTemps,summaryNorwayTemps)
-write.csv(TempSummary,"outputs/TempSummary.csv")
+write.csv(TempSummary,"TempSummary.csv")
 
 #####################################
 #Check SAfrica data to see if site2 temperatures have high predictive power of T_opt and other parametners

@@ -8,7 +8,7 @@ pacman::p_load(tidyverse,data.table,dplyr,tidyverse,ggplot2,car,stringr,nls.mult
                gratia,kableExtra,patchwork) 
 
 # Data import =================================
-dat <- read_csv("outputs/raw.discardHooks_data.csv")
+dat <- read_csv("data/raw.discardHooks_data.csv")
 
 weibull.topts.disc <- read_csv("weibull.discard.hooks.SANW.csv")
 weibull.topts.disc <- weibull.topts.disc %>%

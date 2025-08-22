@@ -4,14 +4,14 @@
 # Outputs:
 
 ############## Load Data: ##############
-TempSummary <- read_csv("outputs/TempSummary.csv")
+#TempSummary <- read_csv("outputs/TempSummary.csv")
 discard.weibull <- read_csv("weibull.discard.hooks.SANW.csv")%>%
-  left_join(TempSummary, by="site")%>%
-  mutate(Elevation = coalesce(Elevation, Elevation.masl))%>%
+  #left_join(TempSummary, by="site")%>%
+  #mutate(Elevation = coalesce(Elevation, Elevation.masl))%>%
   mutate(Species = coalesce(Species, taxon))
 discard.weibull$curveID = as.numeric(discard.weibull$curveID)
 discard.schoolfield <- read.csv("schoolfield.discard.hooks.SANW.csv")%>%
-  left_join(TempSummary, by="site")%>%
+  #left_join(TempSummary, by="site")%>%
   mutate(Species = coalesce(Species, taxon))
 # topts.gam.add = read.csv("gam_fits_add.csv")%>%
 #   mutate(country = case_when(curveid > 1000~"Norway",curveid < 1000~"SAfrica"))%>%
