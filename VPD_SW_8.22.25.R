@@ -1,26 +1,30 @@
 #### Make VPD binned dataset ####
-# make VPD bins (you can adjust number of bins with breaks = )
+# make VPD bins with roughly equal sample sizes (quantiles)
 dat_VPD <- at.subset3 %>%
-  mutate(vpd_bin = cut(VPDleaf,
-                       breaks = pretty(VPDleaf, n = 10),   # ~10 bins
-                       include.lowest = TRUE))%>%
-  filter(gsw<0.6, gsw>-1)%>%
+  mutate(vpd_bin = ntile(VPDleaf, 10)) %>%   # 10 bins with ~equal sample size
+  filter(gsw < 0.6, gsw > -1) %>%
   filter(!is.na(Tair), !is.na(A), !is.na(Species))
 
-# count number of obs per bin
+# summarize counts per bin
 vpd_counts <- dat_VPD %>%
   group_by(vpd_bin) %>%
-  summarise(n = n(), .groups = "drop")
+  summarise(
+    n = n(),
+    min_val = min(VPDleaf, na.rm = TRUE),
+    max_val = max(VPDleaf, na.rm = TRUE),
+    .groups = "drop"
+  )
 
-# create nice labels with ranges and counts
+# create nice labels with actual VPD ranges + counts
 # (example: "0.3–1.2 (247)")
 vpd_labels <- vpd_counts %>%
-  mutate(label = paste0(as.character(vpd_bin), " (", n, ")")) %>%
+  mutate(label = paste0(round(min_val, 2), "–", round(max_val, 2), " (", n, ")")) %>%
   select(vpd_bin, label)
 
 # join labels back to dataframe
 dat_VPD <- dat_VPD %>%
   left_join(vpd_labels, by = "vpd_bin")
+
 
 #### New binned VPD plot 8.21.25 ####
 # plot like panel a: Photosynthesis vs AirTemp, colored by VPD bin
@@ -31,11 +35,11 @@ ggplot(dat_VPD, aes(x = Tleaf, y = A, color = label)) +
   labs(x = "Leaf temperature (°C)",
        y = expression(Photosynthesis~(mu*mol~CO[2]~m^{-2}~s^{-1}))) +
   theme_classic() +
-  theme(legend.position = "right") #+
-  #facet_wrap(~Elevation) #expot as png 700x700
+  theme(legend.position = "right") +
+  facet_wrap(~Elevation) #export as png 700x700
 
 #### Plot the slope of the VPD categorized lines above ####
-# Step 1: fit lm(A ~ Tleaf) within each Elevation × VPD bin
+# Fit lm(A ~ Tleaf) within each Elevation × VPD bin 
 slopes <- dat_VPD %>%
   group_by(Elevation, vpd_bin, label) %>%
   do(broom::tidy(lm(A ~ Tleaf, data = .))) %>%
@@ -43,26 +47,106 @@ slopes <- dat_VPD %>%
   filter(term == "Tleaf") %>%
   rename(slope = estimate)
 
-# Step 2: get numeric midpoint of each VPD bin
-# extract from factor levels like "(0.3,1.2]"
+#Add numeric bin midpoints (using min/max from vpd_counts)
 slopes <- slopes %>%
-  mutate(vpd_mid = sapply(strsplit(as.character(vpd_bin), ","), function(x) {
-    as.numeric(gsub("[^0-9\\.]", "", x[1])) + 
-      (as.numeric(gsub("[^0-9\\.]", "", x[2])) - as.numeric(gsub("[^0-9\\.]", "", x[1]))) / 2
-  }))
+  left_join(
+    vpd_counts %>%
+      mutate(vpd_mid = (min_val + max_val) / 2),  # midpoint
+    by = "vpd_bin"
+  )
 
-# Step 3: plot slopes vs VPD midpoint
+#Plot slopes vs VPD midpoint 
 ggplot(slopes, aes(x = vpd_mid, y = slope)) +
-  #geom_line(size = 1) +
   geom_point(size = 2) +
   labs(x = "VPD (kPa)",
-       y = "Slope of A vs Tleaf",
-       color = "Elevation") +
+       y = "Slope of A vs Tleaf") +
   theme_classic() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
-  facet_wrap(~as.factor(Elevation)) # export as PNG 700x700
+  facet_wrap(~Elevation) # export as PNG 700x700
 
+#### Now do the same as above but with Slot et al.'s random intercept for species: ####
+library(lme4)
+library(tidyverse)
+library(data.table)
 
+#Make quantile bins for VPD 
+n_groups <- 12
+dat_VPD <- at.subset3 %>%
+  filter(gsw < 0.6, gsw > -1, !is.na(Tair), !is.na(A), !is.na(Species)) %>%
+  mutate(d_group = cut_number(VPDleaf, n_groups),
+         Species = factor(Species),
+         Tleaf_c = scale(Tleaf, scale = FALSE)[,1]) %>%
+  setDT()
+
+# summarise bin ranges
+dat_VPD <- dat_VPD[,`:=`(
+  d_group_nobs = .N,
+  d_group_d_min = min(VPDleaf,na.rm=TRUE),
+  d_group_d_max = max(VPDleaf,na.rm=TRUE),
+  d_group_tc_min = min(Tleaf_c,na.rm=TRUE),
+  d_group_tc_max = max(Tleaf_c,na.rm=TRUE)
+), by=d_group]
+
+#Fit mixed model
+lmm_t <- lmer(A ~ Tleaf_c * Elevation + (Tleaf_c|d_group) + (1|Species), data = dat_VPD)
+summary(lmm_t)
+
+# Keep VPD bin info
+vpd_bins <- dat_VPD %>%
+  select(d_group, d_group_d_min, d_group_d_max, d_group_nobs, d_group_tc_min, d_group_tc_max) %>%
+  distinct()
+
+# Make prediction grid for all d_group × Elevation
+pred_grid <- expand.grid(
+  d_group = vpd_bins$d_group,
+  Elevation = unique(dat_VPD$Elevation)
+) %>%
+  left_join(vpd_bins, by = "d_group") %>%
+  rowwise() %>%
+  mutate(Tleaf_c = list(seq(d_group_tc_min, d_group_tc_max, length.out = 25))) %>%
+  unnest(Tleaf_c) %>%
+  mutate(Tleaf = Tleaf_c + mean(dat_VPD$Tleaf, na.rm=TRUE)) %>%
+  as.data.table()
+
+# Predict using mixed model
+pred_grid[, A_pred := predict(lmm_t, newdata=.SD, re.form=~(Tleaf_c|d_group))]
+
+# Add labels for legend
+vpd_labels <- dat_VPD %>%
+  group_by(d_group) %>%
+  summarise(n = n(),
+            vpd_min = min(VPDleaf),
+            vpd_max = max(VPDleaf),
+            .groups = "drop") %>%
+  mutate(d_group_lab = paste0(round(vpd_min,2), "–", round(vpd_max,2), " (", n, ")"))
+
+pred_grid <- pred_grid %>%
+  left_join(vpd_labels %>% select(d_group, d_group_lab), by = "d_group")
+dat_VPD <- dat_VPD %>%
+  left_join(vpd_labels %>% select(d_group, d_group_lab), by = "d_group")
+
+# Plot
+ggplot() +
+  geom_point(data = dat_VPD, 
+             aes(x = Tleaf, y = A, color = d_group_lab), 
+             alpha = 0.01, size = 1) +
+  geom_line(data = pred_grid, 
+            aes(x = Tleaf, y = A_pred, color = d_group_lab, group = interaction(d_group, Elevation)), 
+            size = 1,
+            show.legend = FALSE) +
+  scale_color_viridis_d(
+    name = "VPD (kPa)\n(n obs)",
+    guide = guide_legend(
+      override.aes = list(alpha = 1, size = 3)
+    )
+  ) +
+  labs(x = "Leaf temperature (°C)",
+       y = expression(Photosynthesis~(mu*mol~CO[2]~m^{-2}~s^{-1}))) +
+  theme_classic() +
+  theme(legend.position = "right") #+
+  #facet_wrap(~Elevation)
+
+## Note that this is not working because my code is somehow plotting all the same lines per elevation. But since this means nothing statistically, just exclude this...
 #### Plot just AT categorized by elevation ####
 ggplot(dat_VPD2, aes(x = Tleaf, y = A, color = factor(Elevation))) +
   geom_point(alpha = 0.01) +
