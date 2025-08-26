@@ -177,7 +177,7 @@ ggplot(raw.dat, aes(x = gsw, y = A, color=as.factor(Elevation))) +
   scale_color_viridis_d(guide = guide_legend(override.aes = list(alpha = 1)))
 
 
-#### Make Tleaf binned dataset ####
+# Make Tleaf binned dataset ####
 # make Tleaf bins based on quantiles
 dat_Tleaf <- at.subset3 %>%
   mutate(Tleaf_bin = ntile(Tleaf, 12)) %>%
@@ -199,7 +199,7 @@ Tleaf_labels <- Tleaf_counts %>%
 dat_Tleaf <- dat_Tleaf %>%
   left_join(Tleaf_labels, by = "Tleaf_bin")
 
-#### Make a plot of gsw and A vs. Tleaf ####
+# Make a plot of gsw and A vs. Tleaf ####
 # Calculate scaling to match ranges of A and gsw
 range_A <- range(dat_Tleaf$A, na.rm = TRUE)
 range_gsw <- range(dat_Tleaf$gsw, na.rm = TRUE)
@@ -279,7 +279,7 @@ ggplot(dat_Tleaf, aes(x = Tleaf)) +
     legend.position = "top",
     legend.title = element_blank()
   )
-#### Plot A and E vs Tleaf ####
+# Plot A and E vs Tleaf ####
 # Define scaling functions between A and E
 scale_E_to_A <- function(E) {
   # put E on A scale
@@ -305,40 +305,102 @@ pred_grid <- data.frame(
               length.out = 200)
 )
 
-pred_grid$A_pred <- predict(gam_A, newdata = pred_grid)
-pred_grid$E_pred <- predict(gam_E, newdata = pred_grid)
-pred_grid$E_pred_scaled <- scale_E_to_A(pred_grid$E_pred)
+# Predict with standard errors
+pred_A <- predict(gam_A, newdata = pred_grid, se.fit = TRUE)
+pred_E <- predict(gam_E, newdata = pred_grid, se.fit = TRUE)
 
-# Plot
+pred_grid$A_pred <- pred_A$fit
+pred_grid$A_se <- pred_A$se.fit
+
+pred_grid$E_pred <- pred_E$fit
+pred_grid$E_se <- pred_E$se.fit
+pred_grid$E_pred_scaled <- scale_E_to_A(pred_grid$E_pred)
+pred_grid$E_se_scaled <- pred_grid$E_se / diff(range(dat_Tleaf$E, na.rm=TRUE)) * diff(range(dat_Tleaf$A, na.rm=TRUE))  # scale SE the same way as E
+
+# Plot with shaded confidence bands
 ggplot(dat_Tleaf, aes(x = Tleaf)) +
-  # Points
-  geom_point(aes(y = A, color = "Photosynthesis"), alpha = 0.05, size = 2) +
+  geom_point(aes(y = A, color = "Photosynthesis"), alpha = 0.01, size = 2) +
   geom_point(aes(y = scale_E_to_A(E), color = "Transpiration"), alpha = 0.01, size = 2) +
+  # Confidence bands
+  geom_ribbon(data = pred_grid, aes(ymin = A_pred - A_se, ymax = A_pred + A_se), 
+              fill = "green3", alpha = 0.4) +
+  geom_ribbon(data = pred_grid, aes(ymin = E_pred_scaled - E_se_scaled, ymax = E_pred_scaled + E_se_scaled),
+              fill = "orange", alpha = 0.4) +
   # GAM lines
   geom_line(data = pred_grid, aes(y = A_pred, color = "Photosynthesis"), size = 1.2) +
   geom_line(data = pred_grid, aes(y = E_pred_scaled, color = "Transpiration"), size = 1.2) +
-  # Axes
   scale_y_continuous(
     name = expression(Photosynthesis~(mu*mol~CO[2]~m^{-2}~s^{-1})),
-    sec.axis = sec_axis(~scale_A_to_E(.), 
-                        name = expression(Transpiration~(mmol~m^{-2}~s^{-1})))
+    sec.axis = sec_axis(~scale_A_to_E(.), name = expression(Transpiration~(mmol~m^{-2}~s^{-1})))
   ) +
   scale_color_manual(
     name = NULL,
     values = c("Photosynthesis" = "green3", "Transpiration" = "orange")
   ) +
+  geom_hline(yintercept = 0, linetype="dashed", color="black") +
   labs(x = "Leaf temperature (°C)") +
   theme_classic() +
-  theme(
-    legend.position = "top",
-    legend.title = element_blank()
-  )
+  theme(legend.position = "right")
 
 
 
-#### plot A and gcw (cuticular conductance) ####
+# Statistical test of A vs. E at high temps: ####
+AE_long <- at.subset3 %>%
+  pivot_longer(cols = c(A, E), names_to = "Variable", values_to = "value")
+
+# Now repeat the test
+highT_AE <- subset(AE_long, Tleaf > 35 & Variable %in% c("A", "E"))
+lm_AE <- lm(value ~ Variable * Tleaf, data = highT_AE)
+anova(lm_AE)
+summary(lm_AE)
+
+# Slope for A:
+slope_A <- coef(lm_AE)["Tleaf"]  # -0.733
+# Slope for E:
+slope_E <- coef(lm_AE)["Tleaf"] + coef(lm_AE)["VariableE:Tleaf"]  # -0.73262 + 0.73231 ≈ -0.0003
+
+#annotations:
+slope_A <- -0.7326
+p_A <- "<<0.001"
+
+slope_E <- -0.0003
+p_E <- "<<0.001"
+
+highT_AE <- highT_AE %>%
+  mutate(Variable = recode(Variable,
+                           "A" = "Photosynthesis (µmol m⁻² s⁻¹)",
+                           "E" = "Transpiration (mol m⁻² s⁻¹)"))
+
+ggplot(highT_AE %>% filter(value < 9), aes(x = Tleaf, y = value, color = Variable)) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(
+    x = "Leaf temperature (°C)", y = "Value") +
+  scale_color_manual(
+    name = NULL,
+    values = c("Photosynthesis (µmol m⁻² s⁻¹)" = "green3", "Transpiration (mol m⁻² s⁻¹)" = "orange")
+  ) +
+  geom_hline(yintercept=0, linetype="dashed", color="black")+
+  annotate("text", x = 36.5, y = 3.75, 
+           label = paste0("Slope = ", round(slope_A, 2), "\n", "p ", p_A),
+           color = "green3", hjust = 0) +
+  annotate("text", x = 35, y = 0.5, 
+           label = paste0("Slope = ", round(slope_E, 3), "\n", "p ", p_E),
+           color = "orange", hjust = 0) +
+  theme_classic() +
+  ggforce::facet_zoom(ylim = c(0, 0.01))
+
+
+########## Cuticular conductance stuff
+
+
+
+
+
+
+# Cuticular conductance analyses ---------------------------------------------
+#### plot A and gcw (cuticular conductance)
 # Relationship: gtw = gsw + gcw + gbw
-### words relationship: total conductance to water vapor = stomatal + cuticular + boundary
+# words relationship: total conductance to water vapor = stomatal + cuticular + boundary
 gsw.dat <- at.subset3 %>%
   mutate(gcw = gtw - gsw - gbw) %>%
   filter(is.finite(gcw))%>%
@@ -399,54 +461,66 @@ ggplot(gsw.dat, aes(x = Tleaf)) +
     legend.title = element_blank()
   )
 
-
-#### Plot conductances ####
-# Pivot longer to make one column for conductance type
+#### Plot conductances
+# Gather conductances
 gsw_long <- gsw.dat %>%
-  select(Tleaf, gsw, gcw, gtw, gbw) %>%
-  pivot_longer(cols = c(gsw, gcw, gtw, gbw),
-               names_to = "Conductance",
-               values_to = "value")
+  select(Tleaf, gsw, gcw, gbw, gtw) %>%
+  pivot_longer(cols = c(gsw, gcw, gbw, gtw), names_to = "Conductance", values_to = "value")
 
-# Add shifted values for plotting
+# Shift gcw and gbw for visualization
 gsw_long_shifted <- gsw_long %>%
   mutate(value_shifted = case_when(
-    Conductance == "gcw" ~ value + 3,   # shift up
-    Conductance == "gbw" ~ value - 3,   # shift down
-    TRUE ~ value                        # leave gsw & gtw as-is
+    Conductance == "gcw" ~ value + 3,   # shift gcw up
+    Conductance == "gbw" ~ value - 3,   # shift gbw down
+    TRUE ~ value                        # keep gsw and gtw as-is
   ))%>%
-  filter(value_shifted < 1, value_shifted >-1)
+  filter(value_shifted<1,value_shifted>-1)
 
-# Refit GAMs with shifted values
+# Fit GAMs and predict with SE
 gam_fits_shifted <- gsw_long_shifted %>%
   group_by(Conductance) %>%
-  group_modify(~ {
-    gam_fit <- gam(value_shifted ~ s(Tleaf, k = 10), data = .x)
+  group_modify(~{
+    gam_fit <- mgcv::gam(value_shifted ~ s(Tleaf, k = 10), data = .x)
     pred_grid <- data.frame(
-      Tleaf = seq(min(.x$Tleaf, na.rm = TRUE),
-                  max(.x$Tleaf, na.rm = TRUE),
-                  length.out = 200)
+      Tleaf = seq(min(.x$Tleaf), max(.x$Tleaf), length.out = 200)
     )
-    pred_grid$value_shifted <- predict(gam_fit, newdata = pred_grid)
+    pred <- predict(gam_fit, newdata = pred_grid, se.fit = TRUE)
+    pred_grid$value_shifted <- pred$fit
+    pred_grid$se <- pred$se.fit
     pred_grid$Conductance <- unique(.x$Conductance)
     pred_grid
   })
 
-# Plot shifted
-ggplot(gsw_long_shifted, aes(x = Tleaf, y = value_shifted, color = Conductance)) +
-  geom_point(alpha = 0.01, size = 1) +
-  geom_line(data = gam_fits_shifted, aes(y = value_shifted, color = Conductance), size = 1.2) +
-  labs(
-    x = "Leaf temperature (°C)",
-    y = expression(Conductance~(mol~m^{-2}~s^{-1})~"(shifted for clarity)")
-  ) +
-  scale_color_manual(
-    values = c(
-      gsw = "blue",
-      gcw = "orange",
-      gtw = "black",
-      gbw = "purple"
-    )
-  ) +
+ggplot(gsw_long_shifted, aes(x = Tleaf)) +
+  geom_point(aes(y = value_shifted, color = Conductance), 
+             alpha = 0.005, size = 1.5) +
+  geom_ribbon(data = gam_fits_shifted, 
+              aes(x = Tleaf, 
+                  ymin = value_shifted - 2*se, 
+                  ymax = value_shifted + 2*se, 
+                  fill = Conductance), 
+              alpha = 0.2, inherit.aes = FALSE) +
+  geom_line(data = gam_fits_shifted, 
+            aes(x = Tleaf, y = value_shifted, color = Conductance), 
+            size = 1.2, inherit.aes = FALSE) +
+  labs(x = "Leaf temperature (°C)", 
+       y = "Conductance (shifted for visualization)") +
+  scale_color_manual(values = c("gsw" = "dodgerblue", 
+                                "gcw" = "orange", 
+                                "gtw" = "darkblue", 
+                                "gbw" = "red")) +
+  scale_fill_manual(values = c("gsw" = "dodgerblue", 
+                               "gcw" = "orange", 
+                               "gtw" = "darkblue", 
+                               "gbw" = "red")) +
   theme_classic() +
-  theme(legend.position = "top")
+  theme(legend.position = "right")
+
+
+#### Statistical test of conductance behavior:
+highT <- gsw_long %>% filter(Tleaf > quantile(Tleaf, 0.75))
+
+lm_high <- lm(value ~ Conductance + Tleaf*Conductance, data = highT)
+anova(lm_high)
+summary(lm_high)
+
