@@ -176,6 +176,73 @@ ggplot(raw.dat, aes(x = gsw, y = A, color=as.factor(Elevation))) +
   facet_wrap(~Aspect) +
   scale_color_viridis_d(guide = guide_legend(override.aes = list(alpha = 1)))
 
+# iWUE: A/gsw vs. Tleaf ####
+#Just A:
+A.Tleaf.plot <- ggplot(raw.dat, aes(x = Tleaf, y = A, color = as.factor(Elevation))) +
+  geom_point(alpha = 0.01) +
+  labs(
+    x = "Leaf temperature (°C)",
+    y= expression(A~(mu*mol~CO[2]~m^{-2}~s^{-1})),
+    color = "Elevation (masl)") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 20.66579, linetype="dashed")+
+  geom_smooth(
+    method = "gam",
+    formula = y ~ s(x, bs = "cs"),
+    se = TRUE,
+    color = "black",
+    linewidth = 1,
+    alpha = 0.3
+  ) +
+  theme_classic() +
+  scale_color_viridis_d(guide = guide_legend(override.aes = list(alpha = 1)))
+#Just gsw:
+gsw.Tleaf.plot <- ggplot(raw.dat, aes(x = Tleaf, y = gsw, color = as.factor(Elevation))) +
+  geom_point(alpha = 0.01) +
+  labs(
+    x = "Leaf temperature (°C)",
+    y= expression(gsw~(mol~m^{-2}~s^{-1})),
+    color = "Elevation (masl)") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 20.66579, linetype="dashed")+
+  geom_smooth(
+    method = "gam",
+    formula = y ~ s(x, bs = "cs"),
+    se = TRUE,
+    color = "black",
+    linewidth = 1,
+    alpha = 0.3
+  ) +
+  theme_classic() +
+  scale_color_viridis_d(guide = guide_legend(override.aes = list(alpha = 1)))
+#Calculate average Topt and plot as vline below:
+mean(discard.weibull$T_opt)
+#iWUE
+iWUE.Tleaf.plot <-ggplot(raw.dat, aes(x = Tleaf, y = A/gsw, color = as.factor(Elevation))) +
+  geom_point(alpha = 0.01) +
+  labs(
+    x = "Leaf temperature (°C)",
+    y = expression(iWUE~(mu*mol~CO[2]~m^{-2}~s^{-1}~ "/" ~mol~H[2]*O~m^{-2}~s^{-1})),
+    color = "Elevation (masl)"
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 20.66579, linetype="dashed")+
+  geom_smooth(
+    method = "gam",
+    formula = y ~ s(x, bs = "cs"),
+    se = TRUE,
+    color = "black",
+    linewidth = 1,
+    alpha = 0.3
+  ) +
+  theme_classic() +
+  scale_color_viridis_d(guide = guide_legend(override.aes = list(alpha = 1)))
+
+A.Tleaf.plot <- A.Tleaf.plot + theme(legend.position = "none")
+gsw.Tleaf.plot <- gsw.Tleaf.plot + theme(legend.position = "none")
+
+a.gsw.plot <- ggarrange(A.Tleaf.plot, gsw.Tleaf.plot, nrow = 2, ncol = 1, labels = c("A","B"))
+ggarrange(a.gsw.plot, iWUE.Tleaf.plot, nrow = 1, ncol = 2,common.legend = TRUE,legend = "right", labels = c("", "C"))
 
 # Make Tleaf binned dataset ####
 # make Tleaf bins based on quantiles
@@ -330,8 +397,8 @@ ggplot(dat_Tleaf, aes(x = Tleaf)) +
   geom_line(data = pred_grid, aes(y = A_pred, color = "Photosynthesis"), size = 1.2) +
   geom_line(data = pred_grid, aes(y = E_pred_scaled, color = "Transpiration"), size = 1.2) +
   scale_y_continuous(
-    name = expression(Photosynthesis~(mu*mol~CO[2]~m^{-2}~s^{-1})),
-    sec.axis = sec_axis(~scale_A_to_E(.), name = expression(Transpiration~(mmol~m^{-2}~s^{-1})))
+    name = expression(A~(mu*mol~CO[2]~m^{-2}~s^{-1})),
+    sec.axis = sec_axis(~scale_A_to_E(.), name = expression(E~(mmol~m^{-2}~s^{-1})))
   ) +
   scale_color_manual(
     name = NULL,
@@ -342,8 +409,150 @@ ggplot(dat_Tleaf, aes(x = Tleaf)) +
   theme_classic() +
   theme(legend.position = "right")
 
+# Make the same as above but faceted by Elevation ####
+# --- Define scaling functions (unchanged) ---
+scale_E_to_A <- function(E, dat) {
+  rng_A <- range(dat$A, na.rm = TRUE)
+  rng_E <- range(dat$E, na.rm = TRUE)
+  (E - rng_E[1]) / diff(rng_E) * diff(rng_A) + rng_A[1]
+}
 
+scale_A_to_E <- function(A_scaled, dat) {
+  rng_A <- range(dat$A, na.rm = TRUE)
+  rng_E <- range(dat$E, na.rm = TRUE)
+  (A_scaled - rng_A[1]) / diff(rng_A) * diff(rng_E) + rng_E[1]
+}
 
+# --- Fit GAMs with Elevation as grouping factor ---
+gam_A <- gam(A ~ s(Tleaf, by = Elevation) + Elevation, data = dat_Tleaf)
+gam_E <- gam(E ~ s(Tleaf, by = Elevation) + Elevation, data = dat_Tleaf)
+
+# --- Prediction grid across Elevation levels ---
+pred_grid <- dat_Tleaf %>%
+  group_by(Elevation) %>%
+  summarise(Tleaf_seq = list(seq(min(Tleaf, na.rm=TRUE),
+                                 max(Tleaf, na.rm=TRUE),
+                                 length.out = 200)), .groups = "drop") %>%
+  tidyr::unnest(Tleaf_seq) %>%
+  rename(Tleaf = Tleaf_seq)
+
+# --- Predictions ---
+pred_A <- predict(gam_A, newdata = pred_grid, se.fit = TRUE)
+pred_E <- predict(gam_E, newdata = pred_grid, se.fit = TRUE)
+
+pred_grid$A_pred <- pred_A$fit
+pred_grid$A_se <- pred_A$se.fit
+pred_grid$E_pred <- pred_E$fit
+pred_grid$E_se <- pred_E$se.fit
+
+# scale E predictions into A units for plotting on same axis
+pred_grid <- pred_grid %>%
+  group_by(Elevation) %>%
+  mutate(E_pred_scaled = scale_E_to_A(E_pred, dat_Tleaf[dat_Tleaf$Elevation == first(Elevation), ]),
+         E_se_scaled = E_se / diff(range(dat_Tleaf$E[dat_Tleaf$Elevation == first(Elevation)], na.rm=TRUE)) *
+           diff(range(dat_Tleaf$A[dat_Tleaf$Elevation == first(Elevation)], na.rm=TRUE))) %>%
+  ungroup()
+
+# --- Plot with facets ---
+ggplot(dat_Tleaf, aes(x = Tleaf)) +
+  geom_point(aes(y = A, color = "Photosynthesis"), alpha = 0.01, size = 1.5) +
+  geom_point(aes(y = scale_E_to_A(E, dat_Tleaf), color = "Transpiration"), alpha = 0.01, size = 1.5) +
+  geom_ribbon(data = pred_grid,
+              aes(ymin = A_pred - A_se, ymax = A_pred + A_se, group = Elevation),
+              fill = "green3", alpha = 0.3) +
+  geom_ribbon(data = pred_grid,
+              aes(ymin = E_pred_scaled - E_se_scaled, ymax = E_pred_scaled + E_se_scaled, group = Elevation),
+              fill = "orange", alpha = 0.3) +
+  geom_line(data = pred_grid, aes(y = A_pred, color = "Photosynthesis", group = Elevation), size = 1.2) +
+  geom_line(data = pred_grid, aes(y = E_pred_scaled, color = "Transpiration", group = Elevation), size = 1.2) +
+  facet_wrap(~Elevation) +
+  scale_y_continuous(
+    name = expression(A~(mu*mol~CO[2]~m^{-2}~s^{-1})),
+    sec.axis = sec_axis(~scale_A_to_E(., dat_Tleaf), 
+                        name = expression(E~(mmol~m^{-2}~s^{-1})))
+  ) +
+  scale_color_manual(
+    name = NULL,
+    values = c("Photosynthesis" = "green3", "Transpiration" = "orange")
+  ) +
+  geom_hline(yintercept = 0, linetype="dashed", color="black") +
+  labs(x = "Leaf temperature (°C)") +
+  theme_classic() +
+  theme(legend.position = "right")
+
+# Plot A and E vs. Tleaf by Species ####
+# --- Define scaling functions (unchanged) ---
+scale_E_to_A <- function(E, dat) {
+  rng_A <- range(dat$A, na.rm = TRUE)
+  rng_E <- range(dat$E, na.rm = TRUE)
+  (E - rng_E[1]) / diff(rng_E) * diff(rng_A) + rng_A[1]
+}
+
+scale_A_to_E <- function(A_scaled, dat) {
+  rng_A <- range(dat$A, na.rm = TRUE)
+  rng_E <- range(dat$E, na.rm = TRUE)
+  (A_scaled - rng_A[1]) / diff(rng_A) * diff(rng_E) + rng_E[1]
+}
+
+# --- Fit GAMs with Species as grouping factor ---
+dat_Tleaf$Species <- factor(dat_Tleaf$Species)
+gam_A <- gam(A ~ s(Tleaf, Species, bs = "fs") + Species, data = dat_Tleaf)
+gam_E <- gam(E ~ s(Tleaf, Species, bs = "fs") + Species, data = dat_Tleaf)
+
+# --- Prediction grid across Species levels ---
+pred_grid <- dat_Tleaf %>%
+  group_by(Species) %>%
+  summarise(Tleaf_seq = list(seq(min(Tleaf, na.rm=TRUE),
+                                 max(Tleaf, na.rm=TRUE),
+                                 length.out = 200)), .groups = "drop") %>%
+  tidyr::unnest(Tleaf_seq) %>%
+  rename(Tleaf = Tleaf_seq)
+
+# --- Predictions ---
+pred_A <- predict(gam_A, newdata = pred_grid, se.fit = TRUE)
+pred_E <- predict(gam_E, newdata = pred_grid, se.fit = TRUE)
+
+pred_grid$A_pred <- pred_A$fit
+pred_grid$A_se <- pred_A$se.fit
+pred_grid$E_pred <- pred_E$fit
+pred_grid$E_se <- pred_E$se.fit
+
+# scale E predictions into A units for plotting on same axis
+pred_grid <- pred_grid %>%
+  group_by(Species) %>%
+  mutate(E_pred_scaled = scale_E_to_A(E_pred, dat_Tleaf[dat_Tleaf$Species == first(Species), ]),
+         E_se_scaled = E_se / diff(range(dat_Tleaf$E[dat_Tleaf$Species == first(Species)], na.rm=TRUE)) *
+           diff(range(dat_Tleaf$A[dat_Tleaf$Species == first(Species)], na.rm=TRUE))) %>%
+  ungroup()
+
+# --- Plot with facets by Species ---
+ggplot(dat_Tleaf, aes(x = Tleaf)) +
+  geom_point(aes(y = A, color = "Photosynthesis"), alpha = 0.01, size = 1.5) +
+  geom_point(aes(y = scale_E_to_A(E, dat_Tleaf), color = "Transpiration"), alpha = 0.01, size = 1.5) +
+  geom_ribbon(data = pred_grid,
+              aes(ymin = A_pred - A_se, ymax = A_pred + A_se, group = Species),
+              fill = "green3", alpha = 0.3) +
+  geom_ribbon(data = pred_grid,
+              aes(ymin = E_pred_scaled - E_se_scaled, ymax = E_pred_scaled + E_se_scaled, group = Species),
+              fill = "orange", alpha = 0.3) +
+  geom_line(data = pred_grid, aes(y = A_pred, color = "Photosynthesis", group = Species), size = 1.2) +
+  geom_line(data = pred_grid, aes(y = E_pred_scaled, color = "Transpiration", group = Species), size = 1.2) +
+  facet_wrap(~Species) +
+  scale_y_continuous(
+    name = expression(A~(mu*mol~CO[2]~m^{-2}~s^{-1})),
+    sec.axis = sec_axis(~scale_A_to_E(., dat_Tleaf), 
+                        name = expression(E~(mmol~m^{-2}~s^{-1})))
+  ) +
+  scale_color_manual(
+    name = NULL,
+    values = c("Photosynthesis" = "green3", "Transpiration" = "orange")
+  ) +
+  geom_hline(yintercept = 0, linetype="dashed", color="black") +
+  labs(x = "Leaf temperature (°C)") +
+  theme_classic() +
+  theme(legend.position = "right")
+
+#
 # Statistical test of A vs. E at high temps: ####
 AE_long <- at.subset3 %>%
   pivot_longer(cols = c(A, E), names_to = "Variable", values_to = "value")
@@ -353,6 +562,10 @@ highT_AE <- subset(AE_long, Tleaf > 35 & Variable %in% c("A", "E"))
 lm_AE <- lm(value ~ Variable * Tleaf, data = highT_AE)
 anova(lm_AE)
 summary(lm_AE)
+#Sub-test to confirm E slope is not different than zero:
+dat35 <- at.subset3%>%
+  filter(Tleaf>35)
+summary(lm(E~Tleaf, data=dat35))
 
 # Slope for A:
 slope_A <- coef(lm_AE)["Tleaf"]  # -0.733
@@ -371,7 +584,7 @@ highT_AE <- highT_AE %>%
                            "A" = "Photosynthesis (µmol m⁻² s⁻¹)",
                            "E" = "Transpiration (mol m⁻² s⁻¹)"))
 
-ggplot(highT_AE %>% filter(value < 9), aes(x = Tleaf, y = value, color = Variable)) +
+high.AE.plot <- ggplot(highT_AE %>% filter(value < 9), aes(x = Tleaf, y = value, color = Variable)) +
   geom_smooth(method = "lm", se = TRUE) +
   labs(
     x = "Leaf temperature (°C)", y = "Value") +
@@ -384,11 +597,176 @@ ggplot(highT_AE %>% filter(value < 9), aes(x = Tleaf, y = value, color = Variabl
            label = paste0("Slope = ", round(slope_A, 2), "\n", "p ", p_A),
            color = "green3", hjust = 0) +
   annotate("text", x = 35, y = 0.5, 
-           label = paste0("Slope = ", round(slope_E, 3), "\n", "p ", p_E),
+           label = paste0("Slope ≈ ", round(slope_E, 4), "\n", "p ", p_E),
            color = "orange", hjust = 0) +
   theme_classic() +
   ggforce::facet_zoom(ylim = c(0, 0.01))
 
+# Make two insets instead: 
+A.inset <- ggplot(at.subset3 %>% filter(Tleaf > 35), aes(x = Tleaf, y = A)) +
+  geom_smooth(method = "lm", se = TRUE, color="green3") +
+  labs(
+    x = "Leaf temperature (°C)", y = "A (µmol m⁻² s⁻¹)") +
+  geom_hline(yintercept=0, linetype="dashed", color="black")+
+  annotate("text", x = 36, y = 1, 
+           label = paste0("Slope = ", round(slope_A, 2), "\n", "p ", p_A),
+           color = "green3", hjust = 0) +
+  theme_classic()
+A.inset
+E.inset <- ggplot(at.subset3 %>% filter(Tleaf > 35), aes(x = Tleaf, y = E)) +
+  geom_smooth(method = "lm", se = TRUE, color="orange") +
+  labs(
+    x = "Leaf temperature (°C)", y = "E (mol m⁻² s⁻¹)") +
+  geom_hline(yintercept=0, linetype="dashed", color="black")+
+  annotate("text", x = 36, y = 0.001, 
+           label = paste0("Slope ≈ ", round(slope_E, 4), "\n", "p ", p_E),
+           color = "orange", hjust = 0) + ylim(0,0.005)+
+  theme_classic()
+
+# Combine AE vs. Tleaf plot with the high temp AE plot: ####
+second.row = ggarrange(A.inset, E.inset, nrow=1, ncol=2, labels=c("B", "C"))
+ggarrange(A.E.plot, second.row, nrow=2, ncol=1, labels = c("A",""), heights=c(1,0.8))
+
+
+#Plot A and E vs. Elevation color####
+elev_colors <- c("#FDE725", "#F68D45", "#FF0025", "#E849A1","#CC33CC", "#CC99FF", "#99CCFF", "#6699FF", "#000066")
+as.factor(raw.dat$Elevation)
+# Slopes for A
+slopes_A <- raw.dat %>%
+  filter(Tleaf > 35) %>%
+  group_by(Elevation) %>%
+  group_modify(~ {
+    mod <- lm(A ~ Tleaf, data = .x)
+    tidy(mod) %>%
+      filter(term == "Tleaf")
+  }) %>%
+  mutate(label = paste0("slope=", round(estimate, 2),
+                        ", p=", signif(p.value, 2)),
+         x_pos = Inf,   # place on right edge
+         y_pos = Inf)   # place on top
+
+# Slopes for E
+slopes_E <- raw.dat %>%
+  filter(Tleaf > 35) %>%
+  group_by(Elevation) %>%
+  group_modify(~ {
+    mod <- lm(E ~ Tleaf, data = .x)
+    tidy(mod) %>%
+      filter(term == "Tleaf")
+  }) %>%
+  mutate(label = paste0("slope=", round(estimate, 4),
+                        ", p=", signif(p.value, 2)),
+         x_pos = Inf,
+         y_pos = Inf)
+
+# Plot A
+pA <- ggplot(raw.dat %>% filter(Tleaf > 35),
+             aes(x = Tleaf, y = A, color = as.factor(Elevation))) +
+  geom_point(alpha = 0.4, size = 1.8) +
+  geom_smooth(method = "lm", se = TRUE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  scale_color_manual(values = elev_colors) +
+  geom_text(data = slopes_A,
+            aes(x = x_pos, y = y_pos, label = label, color = as.factor(Elevation)),
+            inherit.aes = FALSE, hjust = 1.1, vjust = 1.1, size = 3.5) +
+  labs(x = "Leaf temperature (°C)", y = "A (µmol m⁻² s⁻¹)", color = "Elevation") +
+  theme_classic() +
+  facet_wrap(~Elevation)
+
+# Plot E
+pE <- ggplot(raw.dat %>% filter(Tleaf > 35),
+             aes(x = Tleaf, y = E, color = as.factor(Elevation))) +
+  geom_smooth(method = "lm", se = TRUE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  scale_color_manual(values = elev_colors) +
+  geom_text(data = slopes_E,
+            aes(x = x_pos, y = y_pos, label = label, color = as.factor(Elevation)),
+            inherit.aes = FALSE, hjust = 1.1, vjust = 1.1, size = 3.5) +
+  labs(x = "Leaf temperature (°C)", y = "E (mol m⁻² s⁻¹)", color = "Elevation") +
+  theme_classic() +
+  facet_wrap(~Elevation)
+
+pA
+pE
+
+# A and then E by Tleaf for each Species ####
+
+
+###############    START HERE TOMORROW !! I had to go to 30+ instead of 35 figure out if this messes things up.... AND THEN GO BACK TO THE ELEVATION VERSIONS AND MAKE SURE THEY LOOK OK AND ARENT WEIRD...
+
+
+
+# --- Define 12 colors for 12 species ---
+species_colors <- c(
+  "#FDE725", "#F68D45", "#FF0025", "#E849A1",
+  "#CC33CC", "#CC99FF", "#99CCFF", "#6699FF",
+  "#000066", "#006633", "#66CC66", "#999999"
+)
+
+# Make sure Species is a factor
+raw.dat$Species <- as.factor(raw.dat$Species)
+
+# --- Slopes for A by species ---
+slopes_A <- raw.dat %>%
+  filter(Tleaf > 30) %>%
+  group_by(Species) %>%
+  group_modify(~ {
+    mod <- lm(A ~ Tleaf, data = .x)
+    tidy(mod) %>% filter(term == "Tleaf")
+  }) %>%
+  mutate(label = paste0("slope=", round(estimate, 2),
+                        ", p=", signif(p.value, 2)),
+         x_pos = Inf,   # place on right edge
+         y_pos = Inf)   # place on top
+
+# --- Slopes for E by species ---
+slopes_E <- raw.dat %>%
+  filter(Tleaf > 30) %>%
+  group_by(Species) %>%
+  group_modify(~ {
+    mod <- lm(E ~ Tleaf, data = .x)
+    tidy(mod) %>% filter(term == "Tleaf")
+  }) %>%
+  mutate(label = paste0("slope=", round(estimate, 4),
+                        ", p=", signif(p.value, 2)),
+         x_pos = Inf,
+         y_pos = Inf)
+
+# --- Plot A by species ---
+pA <- ggplot(raw.dat %>% filter(Tleaf > 30),
+             aes(x = Tleaf, y = A, color = Species)) +
+  geom_point(alpha = 0.05, size = 1.8) +
+  geom_smooth(method = "lm", se = TRUE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  scale_color_manual(values = species_colors) +
+  geom_text(data = slopes_A,
+            aes(x = x_pos, y = y_pos, label = label, color = Species),
+            inherit.aes = FALSE, hjust = 1.1, vjust = 1.1, size = 3.5) +
+  labs(x = "Leaf temperature (°C)", 
+       y = expression(A~(mu*mol~m^{-2}~s^{-1})), 
+       color = "Species") +
+  theme_classic() +
+  facet_wrap(~Species)
+
+# --- Plot E by species ---
+pE <- ggplot(raw.dat %>% filter(Tleaf > 30),
+             aes(x = Tleaf, y = E, color = Species)) +
+  geom_point(alpha = 0.05, size = 1.8) +
+  geom_smooth(method = "lm", se = TRUE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  scale_color_manual(values = species_colors) +
+  geom_text(data = slopes_E,
+            aes(x = x_pos, y = y_pos, label = label, color = Species),
+            inherit.aes = FALSE, hjust = 1.1, vjust = 1.1, size = 3.5) +
+  labs(x = "Leaf temperature (°C)", 
+       y = expression(E~(mmol~m^{-2}~s^{-1})), 
+       color = "Species") +
+  theme_classic() +
+  facet_wrap(~Species)
+
+# Print plots
+pA
+pE
 
 ########## Cuticular conductance stuff
 
@@ -524,3 +902,46 @@ lm_high <- lm(value ~ Conductance + Tleaf*Conductance, data = highT)
 anova(lm_high)
 summary(lm_high)
 
+
+# Statistical test for decoupling by Elevation ####
+df <- dat_Tleaf %>%
+  mutate(
+    Elevation = factor(Elevation, levels = sort(unique(Elevation))),   # ordered facets/terms
+    E_eps = ifelse(E <= 0, NA, E),                                    # avoid /0 and nonpositive E
+    D = A / E_eps,
+    logD = log(D)
+  )
+
+# focus on the hot range where decoupling is hypothesized (adjust as needed)
+hot <- df %>% filter(Tleaf >= 35)
+
+# Linear model: log(A/E) ~ Tleaf * Elevation
+m_decouple <- lm(logD ~ Tleaf * Elevation, data = hot)
+summary(m_decouple)
+anova(m_decouple)
+
+# Brief extraction of per-elevation slopes (Tleaf effect within each elevation)
+emtrends(m_decouple, ~ Elevation, var = "Tleaf")  # slope of log(A/E) vs Tleaf by elevation
+
+# Now try for Species ####
+df <- dat_Tleaf %>%
+  mutate(
+    Species = factor(Species, levels = sort(unique(Species))),  # ordered facets/terms
+    E_eps   = ifelse(E <= 0, NA, E),                            # avoid /0 and nonpositive E
+    D       = A / E_eps,
+    logD    = log(D)
+  )
+
+# focus on the hot range where decoupling is hypothesized (adjust threshold as needed)
+hot <- df %>% filter(Tleaf >= 35)
+
+# Linear model: log(A/E) ~ Tleaf * Species
+m_decouple_sp <- lm(logD ~ Tleaf * Species, data = hot)
+
+summary(m_decouple_sp)
+
+# ANOVA
+anova(m_decouple_sp)
+
+# slope of log(A/E) vs Tleaf by species
+emtrends(m_decouple_sp, ~ Species, var = "Tleaf")
