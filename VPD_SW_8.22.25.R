@@ -264,6 +264,7 @@ ggplot(dat_VPD2, aes(x = Tleaf, y = A, color = moist_cat)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         legend.position = "none")
+
 slopes <- dat_VPD2 %>%
   group_by(moist_cat) %>%
   do(tidy(lm(A ~ Tleaf, data = .))) %>%

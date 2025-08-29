@@ -1,4 +1,5 @@
 raw.dat <- read.csv('data/raw.discardHooks_data.csv')
+at.subset3 <- raw.dat
 raw.dat <- raw.dat%>%
   filter(gsw<0.6, gsw>-1)%>%
   filter(!is.na(Tair), !is.na(A), !is.na(Species))
@@ -361,18 +362,26 @@ scale_A_to_E <- function(A_scaled) {
   (A_scaled - rng_A[1]) / diff(rng_A) * diff(rng_E) + rng_E[1]
 }
 
+
 # Fit GAMs
 gam_A <- gam(A ~ s(Tleaf, k = 10), data = dat_Tleaf)
 gam_E <- gam(E ~ s(Tleaf, k = 10), data = dat_Tleaf)
 
 # Prediction grid
-pred_grid <- data.frame(
-  Tleaf = seq(min(dat_Tleaf$Tleaf, na.rm=TRUE),
-              max(dat_Tleaf$Tleaf, na.rm=TRUE),
-              length.out = 200)
-)
+pred_grid <- data.frame(Tleaf = seq(min(dat_Tleaf$Tleaf, na.rm=TRUE),
+                                    max(dat_Tleaf$Tleaf, na.rm=TRUE),
+                                    length.out = 200))
 
-# Predict with standard errors
+# Add local sample size within a sliding window (e.g. ±1 °C)
+window_size <- 1
+pred_grid$n_obs <- sapply(pred_grid$Tleaf, function(x) {
+  sum(abs(dat_Tleaf$Tleaf - x) <= window_size, na.rm = TRUE)
+})
+
+# Keep only predictions with at least 10 nearby observations
+#pred_grid_use <- pred_grid %>% filter(n_obs >= 2000) ## Use this if you want to truncate the GAM line
+
+# Predict only where supported
 pred_A <- predict(gam_A, newdata = pred_grid, se.fit = TRUE)
 pred_E <- predict(gam_E, newdata = pred_grid, se.fit = TRUE)
 
@@ -382,18 +391,16 @@ pred_grid$A_se <- pred_A$se.fit
 pred_grid$E_pred <- pred_E$fit
 pred_grid$E_se <- pred_E$se.fit
 pred_grid$E_pred_scaled <- scale_E_to_A(pred_grid$E_pred)
-pred_grid$E_se_scaled <- pred_grid$E_se / diff(range(dat_Tleaf$E, na.rm=TRUE)) * diff(range(dat_Tleaf$A, na.rm=TRUE))  # scale SE the same way as E
+pred_grid$E_se_scaled <- pred_grid$E_se / diff(range(dat_Tleaf$E, na.rm=TRUE)) * diff(range(dat_Tleaf$A, na.rm=TRUE))
 
-# Plot with shaded confidence bands
+# Plot
 ggplot(dat_Tleaf, aes(x = Tleaf)) +
   geom_point(aes(y = A, color = "Photosynthesis"), alpha = 0.01, size = 2) +
   geom_point(aes(y = scale_E_to_A(E), color = "Transpiration"), alpha = 0.01, size = 2) +
-  # Confidence bands
-  geom_ribbon(data = pred_grid, aes(ymin = A_pred - A_se, ymax = A_pred + A_se), 
+  geom_ribbon(data = pred_grid, aes(ymin = A_pred - A_se, ymax = A_pred + A_se),
               fill = "green3", alpha = 0.4) +
   geom_ribbon(data = pred_grid, aes(ymin = E_pred_scaled - E_se_scaled, ymax = E_pred_scaled + E_se_scaled),
               fill = "orange", alpha = 0.4) +
-  # GAM lines
   geom_line(data = pred_grid, aes(y = A_pred, color = "Photosynthesis"), size = 1.2) +
   geom_line(data = pred_grid, aes(y = E_pred_scaled, color = "Transpiration"), size = 1.2) +
   scale_y_continuous(
@@ -408,6 +415,7 @@ ggplot(dat_Tleaf, aes(x = Tleaf)) +
   labs(x = "Leaf temperature (°C)") +
   theme_classic() +
   theme(legend.position = "right")
+
 
 # Make the same as above but faceted by Elevation ####
 # --- Define scaling functions (unchanged) ---
@@ -633,21 +641,21 @@ elev_colors <- c("#FDE725", "#F68D45", "#FF0025", "#E849A1","#CC33CC", "#CC99FF"
 as.factor(raw.dat$Elevation)
 # Slopes for A
 slopes_A <- raw.dat %>%
-  filter(Tleaf > 35) %>%
+  filter(Tleaf > 30) %>%
   group_by(Elevation) %>%
   group_modify(~ {
     mod <- lm(A ~ Tleaf, data = .x)
     tidy(mod) %>%
       filter(term == "Tleaf")
   }) %>%
-  mutate(label = paste0("slope=", round(estimate, 2),
+  mutate(label = paste0("slope=", round(estimate, 3),
                         ", p=", signif(p.value, 2)),
          x_pos = Inf,   # place on right edge
          y_pos = Inf)   # place on top
 
 # Slopes for E
 slopes_E <- raw.dat %>%
-  filter(Tleaf > 35) %>%
+  filter(Tleaf > 30) %>%
   group_by(Elevation) %>%
   group_modify(~ {
     mod <- lm(E ~ Tleaf, data = .x)
@@ -660,9 +668,9 @@ slopes_E <- raw.dat %>%
          y_pos = Inf)
 
 # Plot A
-pA <- ggplot(raw.dat %>% filter(Tleaf > 35),
+pA <- ggplot(raw.dat %>% filter(Tleaf > 30),
              aes(x = Tleaf, y = A, color = as.factor(Elevation))) +
-  geom_point(alpha = 0.4, size = 1.8) +
+  geom_point(alpha = 0.05, size = 1.8) +
   geom_smooth(method = "lm", se = TRUE) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
   scale_color_manual(values = elev_colors) +
@@ -674,8 +682,9 @@ pA <- ggplot(raw.dat %>% filter(Tleaf > 35),
   facet_wrap(~Elevation)
 
 # Plot E
-pE <- ggplot(raw.dat %>% filter(Tleaf > 35),
+pE <- ggplot(raw.dat %>% filter(Tleaf > 30),
              aes(x = Tleaf, y = E, color = as.factor(Elevation))) +
+  geom_point(alpha = 0.05, size = 1.8) +
   geom_smooth(method = "lm", se = TRUE) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
   scale_color_manual(values = elev_colors) +
@@ -690,11 +699,12 @@ pA
 pE
 
 # A and then E by Tleaf for each Species ####
+species_by_elev <- raw.dat %>%
+  select(Species, Elevation) %>%
+  distinct() %>%              # keep only unique combinations
+  arrange(Elevation, Species) # sort nicely
 
-
-###############    START HERE TOMORROW !! I had to go to 30+ instead of 35 figure out if this messes things up.... AND THEN GO BACK TO THE ELEVATION VERSIONS AND MAKE SURE THEY LOOK OK AND ARENT WEIRD...
-
-
+species_by_elev
 
 # --- Define 12 colors for 12 species ---
 species_colors <- c(
@@ -727,7 +737,7 @@ slopes_E <- raw.dat %>%
     mod <- lm(E ~ Tleaf, data = .x)
     tidy(mod) %>% filter(term == "Tleaf")
   }) %>%
-  mutate(label = paste0("slope=", round(estimate, 4),
+  mutate(label = paste0("slope=", round(estimate, 5),
                         ", p=", signif(p.value, 2)),
          x_pos = Inf,
          y_pos = Inf)
@@ -945,3 +955,84 @@ anova(m_decouple_sp)
 
 # slope of log(A/E) vs Tleaf by species
 emtrends(m_decouple_sp, ~ Species, var = "Tleaf")
+
+# Fit USO model and make a medlyn model fit plot: ------------------------------
+#Bin soil moisture into high vs low
+moist_colors <- c("Low (0–50)" = "#d95f02",   # rusty orange
+                  "High (50–100)" = "#3333CC") # bluish green/purple
+
+dat_VPD2 <- dat_VPD2 %>%
+  mutate(moist_bin = case_when(
+    grepl("0-11|11-22|22-33|33-44|44-55", moist_cat) ~ "Low (0–50)",
+    grepl("55-66|66-77|77-88|88-100", moist_cat) ~ "High (50–100)",
+    TRUE ~ NA_character_
+  ))
+
+#Function to fit Medlyn model and extract g1
+fit_g1 <- function(df){
+  uso_data <- df %>%
+    filter(!is.na(gsw), !is.na(A), !is.na(Ca), !is.na(VPDleaf),
+           gsw > 0, A > 0, Ca > 0, VPDleaf > 0)
+  
+  if(nrow(uso_data) < 10) return(NA)  # safety check if too few points
+  
+  fit <- tryCatch({
+    nls(gsw ~ g0 + 1.6 * (1 + g1 / sqrt(VPDleaf)) * (A / Ca),
+        data = uso_data,
+        start = list(g0 = 0.01, g1 = 4))
+  }, error = function(e) NA)
+  
+  if(is.na(fit)[1]) return(NA)
+  coef(fit)["g1"]
+}
+
+##Fit separate g1 for each moisture bin
+g1_values <- dat_VPD2 %>%
+  group_by(moist_bin) %>%
+  summarise(g1 = fit_g1(cur_data()), .groups = "drop")
+
+print(g1_values)
+
+#Add USO_x using bin-specific g1
+dat_VPD2 <- dat_VPD2 %>%
+  left_join(g1_values, by = "moist_bin") %>%
+  mutate(USO_x = 1.6 * (1 + g1 / sqrt(VPDleaf)) * A / Ca)
+dat_VPD2 <- dat_VPD2 %>%
+  mutate(ci_ca = Ci / Ca)
+
+# GAM for physiology vs Tleaf
+plot_physio <- function(df, yvar, ylab){
+  ggplot(df, aes(x = Tleaf, y = .data[[yvar]], color = moist_bin)) +
+    geom_point(alpha = 0.01) +
+    geom_smooth(method = "gam", formula = y ~ s(x, k = 5), se = TRUE) +
+    scale_color_manual(values = moist_colors, name = "Soil moisture") +
+    labs(x = "Leaf temperature (°C)", y = ylab) +
+    theme_classic()
+}
+
+# Linear for USO model
+plot_uso <- function(df){
+  ggplot(df, aes(x = USO_x, y = gsw, color = moist_bin)) +
+    geom_point(alpha = 0.01) +
+    geom_smooth(method = "lm", se = TRUE) +
+    scale_color_manual(values = moist_colors, name = "Soil moisture") +
+    labs(x = expression(1.6~(1+g[1]/sqrt(VPDleaf))*A/C[a]),
+         y = expression(g[s][w]~(mol~m^{-2}~s^{-1}))) +
+    theme_classic()
+}
+
+# Build individual panels
+pA    <- plot_physio(dat_VPD2, "A",    expression(A~(mu*mol~CO[2]~m^{-2}~s^{-1})))
+pgsw  <- plot_physio(dat_VPD2, "gsw",  expression(g[s][w]~(mol~m^{-2}~s^{-1})))
+pE    <- plot_physio(dat_VPD2, "E",    expression(E~(mmol~m^{-2}~s^{-1})))
+pCiCa <- plot_physio(dat_VPD2, "ci_ca", expression(C[i]/C[a]))
+pUSO  <- plot_uso(dat_VPD2)
+
+pCiCa <- plot_physio(dat_VPD2, "ci_ca", expression(C[i]/C[a])) +
+  coord_cartesian(ylim = c(0, NA))
+# Arrange into grid (3 rows x 2 cols)
+ggarrange(pA, pgsw, 
+          pE, pCiCa, 
+          pUSO, NULL,
+          nrow=2, ncol=3, common.legend = TRUE,
+          labels = c("A","B","C","D","E",""))

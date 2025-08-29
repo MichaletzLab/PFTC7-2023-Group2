@@ -12,6 +12,7 @@ library(segmented)
 library(tidylog)
 library(readxl)
 library(rTPC)
+library(gratia)
 
 # Set wd to main R project
 source("code/correct_6800_functions.R")
