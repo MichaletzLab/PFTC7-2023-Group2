@@ -1,3 +1,4 @@
+library(rlang)
 # Arrange Data -----------------------------------------------------------------
 raw.dat <- read.csv('data/raw.discardHooks_data.csv')
 at.subset3 <- raw.dat
@@ -79,26 +80,20 @@ moist_by_elev <- moist_by_elev_source %>%
   summarise(mean_moist_pct = mean(mean_moist_pct, na.rm = TRUE), .groups = "drop")
 
 ## --- 4) Classify Low / High using global median across elevations ---
+## --- 4) Classify Low / Medium / High using tertiles across elevations ---
 moist_by_elev <- moist_by_elev %>%
   mutate(
     moist_cat = cut(mean_moist_pct,
-                    breaks = quantile(mean_moist_pct, probs = c(0, 0.5, 1), na.rm = TRUE),
-                    labels = c("Low","High"),
-                    include.lowest = TRUE),
-    moist_bin = case_when(
-      moist_cat == "Low"  ~ "Low",
-      moist_cat == "High" ~ "High"
-    )
+                    breaks = quantile(mean_moist_pct, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+                    labels = c("Low","Medium","High"),
+                    include.lowest = TRUE)
   )
 
 ## --- 5) Join onto your raw.dat so every row gets its elevation’s moisture class ---
-as.factor(raw.dat$Elevation)
 dat_environ <- raw.dat %>%
-  left_join(moist_by_elev, by = "Elevation")
-dat_environ <- dat_environ %>%
-  filter(!is.na(moist_bin)) %>%  # remove rows where moisture bin is missing
-  mutate(moist_bin = factor(moist_bin, levels = c("Low","High")))
-
+  left_join(moist_by_elev, by = "Elevation") %>%
+  filter(!is.na(moist_cat)) %>%
+  mutate(moist_cat = factor(moist_cat, levels = c("Low","Medium","High")))
 
 
 #create a mean temperature summary ---------------------------------------------

@@ -36,7 +36,7 @@ plot_gam <- function(df, pred_grid, yvar, fitvar, lowervar, uppervar, catvar, yl
     geom_line(data = pred_grid, aes(x = Tleaf, y = .data[[fitvar]], color = .data[[catvar]]), size = 1.2) +
     scale_color_manual(values = temp_colors) +
     scale_fill_manual(values = temp_colors) +
-    labs(x = "Leaf Temperature (°C)", y = ylab, color = "Soil Temp", fill = "Soil Temp") +
+    labs(x = "Leaf Temperature (°C)", y = ylab, color = "Average Soil Temp", fill = "Average Soil Temp") +
     theme_classic()
 }
 

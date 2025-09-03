@@ -1,3 +1,49 @@
+tomst_by_elev <- tomst %>%
+  group_by(Elevation) %>%
+  summarise(mean_moist_pct = mean(moist_vol, na.rm = TRUE), .groups = "drop") %>%
+  mutate(source = "tomst")
+
+norway_by_elev <- norwayTemps %>%
+  filter(str_to_lower(climate_variable) %in% c("soil_moisture", "soil moisture")) %>%
+  mutate(
+    value = pmax(value, 0),         # clamp negatives to 0
+    value_pct = value * 100         # convert fraction → %
+  ) %>%
+  group_by(Elevation) %>%
+  summarise(mean_moist_pct = mean(value_pct, na.rm = TRUE), .groups = "drop") %>%
+  mutate(source = "norway")
+
+## --- 3) Combine, then average across sources at the same Elevation (optional) ---
+moist_by_elev_source <- bind_rows(tomst_by_elev, norway_by_elev)
+
+# If you want ONE mean per Elevation (averaging TOMST + Norway where both exist):
+moist_by_elev <- moist_by_elev_source %>%
+  group_by(Elevation) %>%
+  summarise(mean_moist_pct = mean(mean_moist_pct, na.rm = TRUE), .groups = "drop")
+
+## --- 4) Classify Low / High using global median across elevations ---
+moist_by_elev <- moist_by_elev %>%
+  mutate(
+    moist_cat = cut(mean_moist_pct,
+                    breaks = quantile(mean_moist_pct, probs = c(0, 0.5, 1), na.rm = TRUE),
+                    labels = c("Low","High"),
+                    include.lowest = TRUE),
+    moist_bin = case_when(
+      moist_cat == "Low"  ~ "Low",
+      moist_cat == "High" ~ "High"
+    )
+  )
+
+## --- 5) Join onto your raw.dat so every row gets its elevation’s moisture class ---
+as.factor(raw.dat$Elevation)
+dat_environ <- raw.dat %>%
+  left_join(moist_by_elev, by = "Elevation")
+dat_environ <- dat_environ %>%
+  filter(!is.na(moist_bin)) %>%  # remove rows where moisture bin is missing
+  mutate(moist_bin = factor(moist_bin, levels = c("Low","High")))
+
+
+
 # Bin soil moisture: -----------------------------------------------------------
 gam_A   <- gam(A   ~ moist_bin + s(Tleaf, by = moist_bin, k = 10), data = dat_environ)
 gam_E   <- gam(E   ~ moist_bin + s(Tleaf, by = moist_bin, k = 10), data = dat_environ)

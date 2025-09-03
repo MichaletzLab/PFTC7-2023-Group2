@@ -36,7 +36,7 @@ plot_gam <- function(df, pred_grid, yvar, fitvar, lowervar, uppervar, catvar, yl
     geom_line(data = pred_grid, aes(x = Tleaf, y = .data[[fitvar]], color = .data[[catvar]]), size = 1.2) +
     scale_color_manual(values = temp_colors) +
     scale_fill_manual(values = temp_colors) +
-    labs(x = "Leaf Temperature (°C)", y = ylab, color = "Ground Temp", fill = "Ground Temp") +
+    labs(x = "Leaf Temperature (°C)", y = ylab, color = "Average Ground Temp", fill = "Average Ground Temp") +
     theme_classic()
 }
 
@@ -67,3 +67,6 @@ pUSO <- ggplot(dat.T2Temp, aes(x = USO_x, y = gsw, color = T2_cat)) +
 
 
 ggarrange(pA, pE, pgsw, pUSO, nrow = 2, ncol = 2, common.legend = TRUE, labels = c("A","B","C","D"))
+
+lm_USO <- lm(gsw ~ USO_x * T2_cat, data = dat.T2Temp)
+summary(lm_USO)

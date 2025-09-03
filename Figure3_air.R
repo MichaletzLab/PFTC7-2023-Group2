@@ -36,7 +36,7 @@ plot_gam <- function(df, pred_grid, yvar, fitvar, lowervar, uppervar, catvar, yl
     geom_line(data = pred_grid, aes(x = Tleaf, y = .data[[fitvar]], color = .data[[catvar]]), size = 1.2) +
     scale_color_manual(values = temp_colors) +
     scale_fill_manual(values = temp_colors) +
-    labs(x = "Leaf Temperature (°C)", y = ylab, color = "Air Temp", fill = "Air Temp") +
+    labs(x = "Leaf Temperature (°C)", y = ylab, color = "Average Air Temp", fill = "Average Air Temp") +
     theme_classic()
 }
 
@@ -77,3 +77,7 @@ pUSO <- ggplot(dat.airTemp, aes(x = USO_x, y = gsw, color = air_cat)) +
            label=annot_text, hjust=0, vjust=1, size=4, color="black")
 
 ggarrange(pA, pE, pgsw, pUSO, nrow = 2, ncol = 2, common.legend = TRUE, labels = c("A","B","C","D"))
+
+#Test if USO slopes are the same 
+lm_USO <- lm(gsw ~ USO_x * air_cat, data = dat.airTemp)
+summary(lm_USO)
