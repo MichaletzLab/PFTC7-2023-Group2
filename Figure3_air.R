@@ -81,3 +81,5 @@ ggarrange(pA, pE, pgsw, pUSO, nrow = 2, ncol = 2, common.legend = TRUE, labels =
 #Test if USO slopes are the same 
 lm_USO <- lm(gsw ~ USO_x * air_cat, data = dat.airTemp)
 summary(lm_USO)
+
+

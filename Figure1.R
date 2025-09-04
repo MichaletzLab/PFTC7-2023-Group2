@@ -1,7 +1,6 @@
 # Make Figure 1 ----------------------------------------------------------------
-#Make a plot of all data A and E vs. Tleaf 
+# --- Helper functions for scaling A and E onto same axis ---
 scale_E_to_A <- function(E) {
-  # put E on A scale
   rng_A <- range(raw.dat$A, na.rm = TRUE)
   rng_E <- range(raw.dat$E, na.rm = TRUE)
   (E - rng_E[1]) / diff(rng_E) * diff(rng_A) + rng_A[1]
@@ -12,48 +11,83 @@ scale_A_to_E <- function(A_scaled) {
   (A_scaled - rng_A[1]) / diff(rng_A) * diff(rng_E) + rng_E[1]
 }
 
+# --- Clean data: remove NAs ---
+raw.dat <- raw.dat %>%
+  filter(!is.na(E), !is.na(A), !is.na(gsw))
+
+# --- Pivot A and E into long format ---
+plot_dat <- raw.dat %>%
+  pivot_longer(cols = c(A, E), names_to = "Flux", values_to = "Value") %>%
+  mutate(
+    Flux = recode(Flux,
+                  A = "Photosynthesis",
+                  E = "Transpiration"),
+    Value_scaled = ifelse(Flux == "Transpiration",
+                          scale_E_to_A(Value),  # put E on A axis
+                          Value)
+  )
+
+# --- Fit GAMs for A and E separately ---
 gam_A <- gam(A ~ s(Tleaf, k = 10), data = raw.dat)
 gam_E <- gam(E ~ s(Tleaf, k = 10), data = raw.dat)
 
+# Prediction grid
 pred_grid <- data.frame(Tleaf = seq(min(raw.dat$Tleaf, na.rm=TRUE),
                                     max(raw.dat$Tleaf, na.rm=TRUE),
                                     length.out = 200))
 
-window_size <- 1 # Add local sample size within a sliding window (e.g. ±1 °C)
-pred_grid$n_obs <- sapply(pred_grid$Tleaf, function(x) {
-  sum(abs(raw.dat$Tleaf - x) <= window_size, na.rm = TRUE)
-})
-
 pred_A <- predict(gam_A, newdata = pred_grid, se.fit = TRUE)
 pred_E <- predict(gam_E, newdata = pred_grid, se.fit = TRUE)
 
-pred_grid$A_pred <- pred_A$fit
-pred_grid$A_se <- pred_A$se.fit
+# Put predictions into long format too
+pred_grid_long <- bind_rows(
+  tibble(
+    Tleaf = pred_grid$Tleaf,
+    Flux = "Photosynthesis",
+    Pred_scaled = pred_A$fit,
+    SE_scaled   = pred_A$se.fit
+  ),
+  tibble(
+    Tleaf = pred_grid$Tleaf,
+    Flux = "Transpiration",
+    Pred_scaled = scale_E_to_A(pred_E$fit),
+    SE_scaled   = pred_E$se.fit / diff(range(raw.dat$E, na.rm=TRUE)) *
+      diff(range(raw.dat$A, na.rm=TRUE))
+  )
+)
 
-pred_grid$E_pred <- pred_E$fit
-pred_grid$E_se <- pred_E$se.fit
-pred_grid$E_pred_scaled <- scale_E_to_A(pred_grid$E_pred)
-pred_grid$E_se_scaled <- pred_grid$E_se / diff(range(raw.dat$E, na.rm=TRUE)) * diff(range(raw.dat$A, na.rm=TRUE))
-
-A.E.full.plot <-ggplot(raw.dat, aes(x = Tleaf)) +
-  geom_point(aes(y = A, color = "Photosynthesis"), alpha = 0.005, size = 2) +
-  geom_point(aes(y = scale_E_to_A(E), color = "Transpiration"), alpha = 0.005, size = 2) +
-  geom_ribbon(data = pred_grid, aes(ymin = A_pred - A_se, ymax = A_pred + A_se),
-              fill = "green4", alpha = 0.4) +
-  geom_ribbon(data = pred_grid, aes(ymin = E_pred_scaled - E_se_scaled, ymax = E_pred_scaled + E_se_scaled),
-              fill = "blue3", alpha = 0.4) +
-  geom_line(data = pred_grid, aes(y = A_pred, color = "Photosynthesis"), size = 1.2) +
-  geom_line(data = pred_grid, aes(y = E_pred_scaled, color = "Transpiration"), size = 1.2) +
+# --- Plot combined A & E ---
+A.E.full.plot <- ggplot() +
+  # Raw points
+  geom_point(data = plot_dat,
+             aes(x = Tleaf, y = Value_scaled, color = Flux),
+             alpha = 0.005, size = 2) +
+  # Ribbons
+  geom_ribbon(data = pred_grid_long,
+              aes(x = Tleaf,
+                  ymin = Pred_scaled - SE_scaled,
+                  ymax = Pred_scaled + SE_scaled,
+                  fill = Flux),
+              alpha = 0.3, inherit.aes = FALSE) +
+  # Lines
+  geom_line(data = pred_grid_long,
+            aes(x = Tleaf, y = Pred_scaled, color = Flux),
+            size = 1.2) +
   scale_y_continuous(
     name = expression(A~(mu*mol~CO[2]~m^{-2}~s^{-1})),
-    sec.axis = sec_axis(~scale_A_to_E(.), name = expression(E~(mmol~m^{-2}~s^{-1})))
+    sec.axis = sec_axis(~scale_A_to_E(.),
+                        name = expression(E~(mmol~m^{-2}~s^{-1})))
   ) +
   scale_color_manual(
     name = NULL,
     values = c("Photosynthesis" = "green4", "Transpiration" = "blue3")
   ) +
+  scale_fill_manual(
+    name = NULL,
+    values = c("Photosynthesis" = "green4", "Transpiration" = "blue3")
+  ) +
   geom_hline(yintercept = 0, linetype="dashed", color="black") +
-  geom_vline(xintercept=TOPT, linetype="dashed", color="black")+
+  geom_vline(xintercept=TOPT, linetype="dashed", color="black") +
   labs(x = "Leaf temperature (°C)") +
   theme_classic() +
   theme(legend.position = "top")
@@ -83,46 +117,78 @@ gsw.plot <- ggplot(raw.dat, aes(x = Tleaf, y = gsw)) +
 ggarrange(A.E.full.plot, gsw.plot, nrow=1, ncol=2, labels=c("A","B"), widths = c(4,3))
 
 # Plot A and E vs. Tleaf at high temperatures (above Topt)
-gam_A <- gam(A ~ s(Tleaf, k = 10), data = hot.dat)
-gam_E <- gam(E ~ s(Tleaf, k = 10), data = hot.dat)
+# --- Clean hot.dat (remove NAs) ---
+hot.dat <- hot.dat %>%
+  filter(!is.na(E), !is.na(A), !is.na(gsw))
 
-# Prediction grid
-pred_grid <- data.frame(Tleaf = seq(min(hot.dat$Tleaf, na.rm=TRUE),
-                                    max(hot.dat$Tleaf, na.rm=TRUE),
-                                    length.out = 200))
+# --- Pivot A and E into long format ---
+plot_hot <- hot.dat %>%
+  pivot_longer(cols = c(A, E), names_to = "Flux", values_to = "Value") %>%
+  mutate(
+    Flux = recode(Flux,
+                  A = "Photosynthesis",
+                  E = "Transpiration"),
+    Value_scaled = ifelse(Flux == "Transpiration",
+                          scale_E_to_A(Value),  # put E on A axis
+                          Value)
+  )
 
-window_size <- 1 # Add local sample size within a sliding window (±1 °C)
-pred_grid$n_obs <- sapply(pred_grid$Tleaf, function(x) {
-  sum(abs(hot.dat$Tleaf - x) <= window_size, na.rm = TRUE)
-})
+# --- Fit GAMs for A and E on hot subset ---
+gam_A_hot <- gam(A ~ s(Tleaf, k = 10), data = hot.dat)
+gam_E_hot <- gam(E ~ s(Tleaf, k = 10), data = hot.dat)
 
-# Predict A and E
-pred_A <- predict(gam_A, newdata = pred_grid, se.fit = TRUE)
-pred_E <- predict(gam_E, newdata = pred_grid, se.fit = TRUE)
+# Prediction grid for hot subset
+pred_grid_hot <- data.frame(Tleaf = seq(min(hot.dat$Tleaf, na.rm=TRUE),
+                                        max(hot.dat$Tleaf, na.rm=TRUE),
+                                        length.out = 200))
 
-pred_grid$A_pred <- pred_A$fit
-pred_grid$A_se <- pred_A$se.fit
+pred_A_hot <- predict(gam_A_hot, newdata = pred_grid_hot, se.fit = TRUE)
+pred_E_hot <- predict(gam_E_hot, newdata = pred_grid_hot, se.fit = TRUE)
 
-pred_grid$E_pred <- pred_E$fit
-pred_grid$E_se <- pred_E$se.fit
-pred_grid$E_pred_scaled <- scale_E_to_A(pred_grid$E_pred)
-pred_grid$E_se_scaled <- pred_grid$E_se / diff(range(hot.dat$E, na.rm=TRUE)) * diff(range(hot.dat$A, na.rm=TRUE))
+# Put predictions into long format
+pred_hot_long <- bind_rows(
+  tibble(
+    Tleaf = pred_grid_hot$Tleaf,
+    Flux = "Photosynthesis",
+    Pred_scaled = pred_A_hot$fit,
+    SE_scaled   = pred_A_hot$se.fit
+  ),
+  tibble(
+    Tleaf = pred_grid_hot$Tleaf,
+    Flux = "Transpiration",
+    Pred_scaled = scale_E_to_A(pred_E_hot$fit),
+    SE_scaled   = pred_E_hot$se.fit / diff(range(hot.dat$E, na.rm=TRUE)) *
+      diff(range(hot.dat$A, na.rm=TRUE))
+  )
+)
 
-# Plot A and E vs. Tleaf
-A.E.full.plot <- ggplot(hot.dat, aes(x = Tleaf)) +
-  geom_point(aes(y = A, color = "Photosynthesis"), alpha = 0.005, size = 2) +
-  geom_point(aes(y = scale_E_to_A(E), color = "Transpiration"), alpha = 0.005, size = 2) +
-  geom_ribbon(data = pred_grid, aes(ymin = A_pred - A_se, ymax = A_pred + A_se),
-              fill = "green4", alpha = 0.4) +
-  geom_ribbon(data = pred_grid, aes(ymin = E_pred_scaled - E_se_scaled, ymax = E_pred_scaled + E_se_scaled),
-              fill = "blue3", alpha = 0.4) +
-  geom_line(data = pred_grid, aes(y = A_pred, color = "Photosynthesis"), size = 1.2) +
-  geom_line(data = pred_grid, aes(y = E_pred_scaled, color = "Transpiration"), size = 1.2) +
+# --- Plot hot subset ---
+A.E.hot.plot <- ggplot() +
+  # Raw points
+  geom_point(data = plot_hot,
+             aes(x = Tleaf, y = Value_scaled, color = Flux),
+             alpha = 0.005, size = 2) +
+  # Ribbons
+  geom_ribbon(data = pred_hot_long,
+              aes(x = Tleaf,
+                  ymin = Pred_scaled - SE_scaled,
+                  ymax = Pred_scaled + SE_scaled,
+                  fill = Flux),
+              alpha = 0.3, inherit.aes = FALSE) +
+  # Lines
+  geom_line(data = pred_hot_long,
+            aes(x = Tleaf, y = Pred_scaled, color = Flux),
+            size = 1.2) +
   scale_y_continuous(
     name = expression(A~(mu*mol~CO[2]~m^{-2}~s^{-1})),
-    sec.axis = sec_axis(~scale_A_to_E(.), name = expression(E~(mmol~m^{-2}~s^{-1})))
+    sec.axis = sec_axis(~scale_A_to_E(.),
+                        name = expression(E~(mmol~m^{-2}~s^{-1})))
   ) +
   scale_color_manual(
+    name = NULL,
+    values = c("Photosynthesis" = "green4", "Transpiration" = "blue3")
+  ) +
+  scale_fill_manual(
     name = NULL,
     values = c("Photosynthesis" = "green4", "Transpiration" = "blue3")
   ) +
@@ -131,6 +197,8 @@ A.E.full.plot <- ggplot(hot.dat, aes(x = Tleaf)) +
   labs(x = "Leaf temperature (°C)") +
   theme_classic() +
   theme(legend.position = "top")
+
+
 
 # Fit GAM for gsw
 gam_gsw <- gam(gsw ~ s(Tleaf, k = 10), data = hot.dat)
@@ -144,7 +212,7 @@ pred_grid$gsw_pred <- pred_gsw$fit
 pred_grid$gsw_se <- pred_gsw$se.fit
 
 # Plot gsw vs. Tleaf
-gsw.plot <- ggplot(hot.dat, aes(x = Tleaf, y = gsw)) +
+gsw.plot.hot <- ggplot(hot.dat, aes(x = Tleaf, y = gsw)) +
   geom_point(alpha = 0.01, size = 2, color = "turquoise") +
   geom_line(data = pred_grid, aes(x = Tleaf, y = gsw_pred), color = "turquoise", size = 1.2, inherit.aes = FALSE) +
   geom_ribbon(data = pred_grid, aes(x = Tleaf, ymin = gsw_pred - gsw_se, ymax = gsw_pred + gsw_se),
@@ -156,7 +224,7 @@ gsw.plot <- ggplot(hot.dat, aes(x = Tleaf, y = gsw)) +
   theme_classic()
 
 # Arrange plots side by side
-hot.plot <- ggarrange(A.E.full.plot, gsw.plot, nrow = 1, ncol = 2, labels = c("A", "B"), widths = c(4,3))
+hot.plot <- ggarrange(A.E.hot.plot, gsw.plot.hot, nrow = 1, ncol = 2, labels = c("A", "B"), widths = c(4,3))
 
 
 deriv_A <- derivatives(gam_A, select = "s(Tleaf)", partial_match = TRUE)

@@ -6,6 +6,9 @@ raw.dat <- raw.dat%>%
   filter(gsw<0.6, gsw>-1)%>%
   filter(!is.na(Tair), !is.na(A), !is.na(Species))
 weibull.discarded <- read.csv('weibull.discard.hooks.SANW.csv')
+weibull.discarded <- weibull.discarded %>%
+  mutate(Species = coalesce(Species, species))
+
 TOPT = mean(weibull.discarded$T_opt)
 hot.dat <- raw.dat %>%
   filter(Tleaf > TOPT)
