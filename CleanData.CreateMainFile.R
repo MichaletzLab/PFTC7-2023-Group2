@@ -13,6 +13,7 @@ library(tidylog)
 library(readxl)
 library(rTPC)
 library(gratia)
+library(mgcv)
 
 # Set wd to main R project
 source("code/correct_6800_functions.R")
