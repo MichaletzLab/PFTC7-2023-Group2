@@ -1,71 +1,150 @@
-# --- Fit GAMs ---
+# Four models:
 gam_mod.A <- gam(A ~ s(Tleaf, k = 3) +
-                   s(Elevation, k = 3) +
-                   s(mean_T2, k = 3) +
-                   s(mean_moist_pct, k = 3) +
-                   ti(Tleaf, Elevation, k = 3) +
-                   ti(Tleaf, mean_T2, k = 3) +
-                   ti(Tleaf, mean_moist_pct, k = 3),
-                 data = raw.env.data,
-                 method = "REML")
+                              s(Elevation, k = 3) +
+                              s(vegetation_height, k=3) +
+                              s(mean_T2, k = 3) +
+                              s(mean_moist_pct, k = 3) +
+                              Species +
+                              ti(Tleaf, Elevation, k = 3) +
+                              ti(Tleaf, vegetation_height, k = 3) +
+                              ti(Tleaf, mean_T2, k = 3) +
+                              ti(Tleaf, mean_moist_pct, k = 3),
+                            data = raw.env.data,
+                            method = "REML"
+)
 summary(gam_mod.A)
-
+#gam_mod.A <- veg.GAM
 gam_mod.E <- gam(E ~ s(Tleaf, k = 3) +
-                   s(Elevation, k = 3) +
-                   s(mean_T2, k = 3) +
-                   s(mean_moist_pct, k = 3) +
-                   ti(Tleaf, Elevation, k = 3) +
-                   ti(Tleaf, mean_T2, k = 3) +
-                   ti(Tleaf, mean_moist_pct, k = 3),
-                 data = raw.env.data,
-                 method = "REML")
+                              s(Elevation, k = 3) +
+                              s(vegetation_height, k=3) +
+                              s(mean_T2, k = 3) +
+                              s(mean_moist_pct, k = 3) +
+                              Species +
+                              ti(Tleaf, Elevation, k = 3) +
+                              ti(Tleaf, vegetation_height, k = 3) +
+                              ti(Tleaf, mean_T2, k = 3) +
+                              ti(Tleaf, mean_moist_pct, k = 3),
+                            data = raw.env.data,
+                            method = "REML"
+)
+summary(gam_mod.E)
 
 gam_mod.gsw <- gam(gsw ~ s(Tleaf, k = 3) +
-                     s(Elevation, k = 3) +
-                     s(mean_T2, k = 3) +
-                     s(mean_moist_pct, k = 3) +
-                     ti(Tleaf, Elevation, k = 3) +
-                     ti(Tleaf, mean_T2, k = 3) +
-                     ti(Tleaf, mean_moist_pct, k = 3),
-                   data = raw.env.data,
-                   method = "REML")
-make_pred_df <- function(model, response, data) {
-  newdat <- data.frame(
-    Tleaf = seq(min(data$Tleaf, na.rm=TRUE),
-                max(data$Tleaf, na.rm=TRUE), length.out = 200),
-    Elevation      = mean(data$Elevation, na.rm=TRUE),
-    mean_T2        = mean(data$mean_T2, na.rm=TRUE),
-    mean_moist_pct = mean(data$mean_moist_pct, na.rm=TRUE)
-  )
-  p <- predict(model, newdata = newdat, se.fit = TRUE)
-  newdat$fit <- p$fit
-  newdat$se  <- p$se.fit
+                                s(Elevation, k = 3) +
+                                s(vegetation_height, k=3) +
+                                s(mean_T2, k = 3) +
+                                s(mean_moist_pct, k = 3) +
+                                Species +
+                                ti(Tleaf, Elevation, k = 3) +
+                                ti(Tleaf, vegetation_height, k = 3) +
+                                ti(Tleaf, mean_T2, k = 3) +
+                                ti(Tleaf, mean_moist_pct, k = 3),
+                              data = raw.env.data,
+                              method = "REML"
+)
+summary(gam_mod.gsw)
+
+# iWUE model (same terms)
+gam_mod.iWUE <- gam(iWUE ~ s(Tleaf, k = 3) +
+                                 s(Elevation, k = 3) +
+                                 s(vegetation_height, k=3) +
+                                 s(mean_T2, k = 3) +
+                                 s(mean_moist_pct, k = 3) +
+                                 Species +
+                                 ti(Tleaf, Elevation, k = 3) +
+                                 ti(Tleaf, vegetation_height, k = 3) +
+                                 ti(Tleaf, mean_T2, k = 3) +
+                                 ti(Tleaf, mean_moist_pct, k = 3),
+                               data = raw.env.data,
+                               method = "REML"
+)
+summary(gam_mod.iWUE)
+
+
+library(ggplot2)
+library(mgcv)
+library(dplyr)
+library(patchwork)
+
+# ---- Updated prediction function (average Species intercepts) ----
+make_pred_df_avg_species <- function(model, response, xvar = "Tleaf", n = 200) {
+  mf_names <- names(model$model)
+  preds <- mf_names[mf_names != response]
+  if (!xvar %in% preds) stop("xvar not found among predictors in the model.")
+  
+  # compute means for numeric predictors only
+  means <- lapply(preds, function(var) {
+    if(is.numeric(model$model[[var]])) mean(model$model[[var]], na.rm = TRUE)
+    else NA
+  })
+  names(means) <- preds
+  
+  # build newdat: replicate means and vary xvar
+  newdat <- as.data.frame(means)[rep(1, n), , drop = FALSE]
+  newdat[[xvar]] <- seq(min(model$model[[xvar]], na.rm = TRUE),
+                        max(model$model[[xvar]], na.rm = TRUE),
+                        length.out = n)
+  
+  # Add a valid factor for Species (any level)
+  newdat$Species <- factor(levels(model$model$Species)[1],
+                           levels = levels(model$model$Species))
+  
+  # predict using lpmatrix
+  X <- predict(model, newdata = newdat, type = "lpmatrix")
+  coefs <- coef(model)
+  
+  # average Species intercepts
+  species_cols <- grep("^Species", colnames(X))
+  if(length(species_cols) > 0) {
+    X[, species_cols] <- rowMeans(X[, species_cols, drop = FALSE])
+  }
+  
+  fit <- X %*% coefs
+  se <- sqrt(rowSums((X %*% vcov(model)) * X))
+  
+  newdat$fit <- as.vector(fit)
+  newdat$se  <- as.vector(se)
   newdat$response <- response
   newdat
 }
 
-finite_diff_deriv <- function(gam_model, xvar, length.out = 200, alpha = 0.05) {
-  # Find all predictors used in the GAM
-  all_vars <- attr(terms(gam_model), "term.labels")
+# ---- Updated derivative function (average Species intercepts) ----
+finite_diff_deriv_avg_species <- function(gam_model, xvar, length.out = 200, alpha = 0.05) {
+  mf_names <- names(gam_model$model)
+  response <- mf_names[1]
+  preds <- mf_names[mf_names != response]
+  if (!xvar %in% preds) stop("xvar not found among predictors in the model.")
   
-  # Hold all other predictors at their means
-  means <- sapply(gam_model$model[all_vars], mean, na.rm = TRUE)
+  # compute means for numeric predictors
+  means <- lapply(preds, function(v) {
+    if(is.numeric(gam_model$model[[v]])) mean(gam_model$model[[v]], na.rm = TRUE) else NA
+  })
+  names(means) <- preds
   
-  # Build grid
-  grid <- as.data.frame(as.list(means))
-  grid <- grid[rep(1, length.out), , drop = FALSE]
-  grid[[xvar]] <- seq(
-    min(gam_model$model[[xvar]], na.rm = TRUE),
-    max(gam_model$model[[xvar]], na.rm = TRUE),
-    length.out = length.out
-  )
+  # build grid
+  grid <- as.data.frame(means)[rep(1, length.out), , drop = FALSE]
+  grid[[xvar]] <- seq(min(gam_model$model[[xvar]], na.rm = TRUE),
+                      max(gam_model$model[[xvar]], na.rm = TRUE),
+                      length.out = length.out)
   
-  # Predict and compute finite differences
+  # Add valid Species factor
+  grid$Species <- factor(levels(gam_model$model$Species)[1],
+                         levels = levels(gam_model$model$Species))
+  
+  # lpmatrix
   X <- predict(gam_model, newdata = grid, type = "lpmatrix")
   coefs <- coef(gam_model)
   Vb <- vcov(gam_model)
   
-  dX <- diff(X) / diff(grid[[xvar]][1:2])
+  # average Species intercepts
+  species_cols <- grep("^Species", colnames(X))
+  if(length(species_cols) > 0) {
+    X[, species_cols] <- rowMeans(X[, species_cols, drop = FALSE])
+  }
+  
+  dx <- diff(grid[[xvar]])
+  step <- dx[1]
+  dX <- diff(X) / step
   deriv <- dX %*% coefs
   se <- sqrt(rowSums((dX %*% Vb) * dX))
   
@@ -73,7 +152,6 @@ finite_diff_deriv <- function(gam_model, xvar, length.out = 200, alpha = 0.05) {
   lower <- deriv - crit * se
   upper <- deriv + crit * se
   
-  # Use setNames to name the first column dynamically
   out <- data.frame(
     x = grid[[xvar]][-1],
     derivative = as.vector(deriv),
@@ -85,32 +163,31 @@ finite_diff_deriv <- function(gam_model, xvar, length.out = 200, alpha = 0.05) {
   out
 }
 
+# ---- Make predictions + derivatives for all models ----
+pred_A   <- make_pred_df_avg_species(gam_mod.A,   "A",   "Tleaf")
+pred_E   <- make_pred_df_avg_species(gam_mod.E,   "E",   "Tleaf")
+pred_gsw <- make_pred_df_avg_species(gam_mod.gsw, "gsw", "Tleaf")
+pred_iW  <- make_pred_df_avg_species(gam_mod.iWUE,"iWUE","Tleaf")
 
-deriv_A <- finite_diff_deriv(gam_mod.A, "Tleaf")
-deriv_E <- finite_diff_deriv(gam_mod.E, "Tleaf")
-deriv_gsw <- finite_diff_deriv(gam_mod.gsw, "Tleaf")
+deriv_A   <- finite_diff_deriv_avg_species(gam_mod.A,   "Tleaf")
+deriv_E   <- finite_diff_deriv_avg_species(gam_mod.E,   "Tleaf")
+deriv_gsw <- finite_diff_deriv_avg_species(gam_mod.gsw, "Tleaf")
+deriv_iW  <- finite_diff_deriv_avg_species(gam_mod.iWUE,"Tleaf")
 
-pred_A   <- make_pred_df(gam_mod.A,   "A",   raw.env.data)
-pred_E   <- make_pred_df(gam_mod.E,   "E",   raw.env.data)
-pred_gsw <- make_pred_df(gam_mod.gsw, "gsw", raw.env.data)
-
-
-# ---- Helper: find x at max y ----
+# ---- Helper: find Topt ----
 find_xmax <- function(pred_df) {
   pred_df$Tleaf[which.max(pred_df$fit)]
 }
 
-# ---- Function for top-row response plots ----
+# ---- Response plot (top row) ----
 plot_response <- function(pred_df, raw_df, response_name) {
-  # Get x at max y (Topt)
   x_max <- find_xmax(pred_df)
-  
-  # Standard labels for Licor 6800 variables
   y_lab <- switch(
     response_name,
     "A"   = expression(A ~ "(" * mu * mol ~ m^-2 ~ s^-1 * ")"),
     "E"   = expression(E ~ "(" * mol ~ m^-2 ~ s^-1 * ")"),
     "gsw" = expression(g[sw] ~ "(" * mol ~ m^-2 ~ s^-1 * ")"),
+    "iWUE"= expression(iWUE ~ "(" * mu * mol ~ mol^-1 * ")"),
     response_name
   )
   
@@ -120,30 +197,28 @@ plot_response <- function(pred_df, raw_df, response_name) {
       aes(x = Tleaf, y = .data[[response_name]]),
       inherit.aes = FALSE, alpha = 0.02, size = 0.5
     ) +
-    geom_line(color = "forestgreen", linewidth = 1) +
+    geom_line(color = "green4", linewidth = 1) +
     geom_ribbon(aes(ymin = fit - 2 * se, ymax = fit + 2 * se),
-                fill = "forestgreen", alpha = 0.2) +
+                fill = "green", alpha = 0.2) +
     geom_vline(xintercept = x_max, linetype = "dashed", color = "black") +
     theme_classic() +
     labs(x = expression(Leaf~Temperature~(degree*C)), y = y_lab)
 }
 
-# ---- Function for derivative plots ----
+# ---- Derivative plot (bottom row) ----
 plot_deriv <- function(deriv_df, response_name) {
   xvar <- names(deriv_df)[1]
   
-  # Determine slope direction for coloring
   deriv_df <- deriv_df %>%
-    mutate(
-      sig = lower * upper > 0,              # CI excludes 0
-      dir = ifelse(derivative > 0, "Positive", "Negative")
-    )
+    mutate(sig = lower * upper > 0,
+           dir = ifelse(derivative > 0, "Positive", "Negative"))
   
   y_lab <- switch(
     response_name,
     "A"   = expression(dA/dTleaf~"("*mu*"mol"~m^-2~s^-1~degree*C^-1*")"),
     "E"   = expression(dE/dTleaf~"(" * mol~m^-2~s^-1~degree*C^-1 * ")"),
     "gsw" = expression(dg[sw]/dTleaf~"(" * mol~m^-2~s^-1~degree*C^-1 * ")"),
+    "iWUE"= expression(diWUE/dTleaf),
     paste0("d", response_name, "/dTleaf")
   )
   
@@ -165,15 +240,26 @@ plot_deriv <- function(deriv_df, response_name) {
     theme(legend.position = "right")
 }
 
-# ---- Create the plots ----
+# ---- Create all plots ----
 pA  <- plot_response(pred_A, raw.env.data, "A")
 pE  <- plot_response(pred_E, raw.env.data, "E")
 pG  <- plot_response(pred_gsw, raw.env.data, "gsw")
+pI  <- plot_response(pred_iW, raw.env.data, "iWUE")
 
 dA  <- plot_deriv(deriv_A, "A")
 dE  <- plot_deriv(deriv_E, "E")
 dG  <- plot_deriv(deriv_gsw, "gsw")
+dI  <- plot_deriv(deriv_iW, "iWUE")
 
-# ---- Combine panels ----
-(pA | pE | pG) /
-  (dA | dE | dG)
+all_plots <- list(pA, pE, pG, pI,
+                  dA, dE, dG, dI)
+
+# Arrange in 2 rows, 4 columns, add labels
+final_plot <- ggarrange(plotlist = all_plots,
+                        ncol = 4, nrow = 2,
+                        labels = c("A", "B", "C", "D",
+                                   "E", "F", "G", "H"),
+                        label.x = 0.05, label.y = 0.95,  # position of labels
+                        common.legend = TRUE, legend = "right")
+
+final_plot

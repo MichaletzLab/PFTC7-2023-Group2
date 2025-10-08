@@ -45,8 +45,6 @@ summary(gam_mod_all_Country)
 summary(gam_mod_PC1_Country)
 
 
-library(ggplot2)
-
 plot_gam_response <- function(model, response="A", include="Elevation") {
   # create newdata for predictions
   newdat <- with(raw.env.data_pca,
@@ -84,4 +82,6 @@ p_all_Country  <- plot_gam_response(gam_mod_all_Country, "A", include="Country")
 p_PC1_Country  <- plot_gam_response(gam_mod_PC1_Country, "A", include="Country")
 
 p_all_Elev | p_PC1_Elev | p_all_Country | p_PC1_Country
+#Conclusion is these are all incredibly similar...
+# See #PC_GAM_Figure for the overall figure with PC1 divided into three categories
 

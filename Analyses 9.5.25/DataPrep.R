@@ -272,11 +272,96 @@ raw.env.data <- raw.env.data %>%
   left_join(moist_lookup, by="mean_moist_pct")
 
 raw.env.data <- raw.env.data %>%
-  select(A, E, gsw, Tleaf, Elevation, Species,
+  select(curveID,A, E, gsw, Tleaf, Elevation, Species,
          mean_T1, mean_T1_cat,
          mean_air, mean_air_cat,
          Elevation_cat,
          mean_T2, mean_T2_cat,
-         mean_moist_pct, mean_moist_pct_cat) %>%
+         mean_moist_pct, mean_moist_pct_cat, VPDleaf, Ca) %>%
   mutate(Country = if_else(Elevation < 1500, "Norway", "S. Africa"))
+## Add dummy for the species:
+raw.env.data <- raw.env.data %>%
+  mutate(Species = factor(Species))
+
+# Create dummy columns
+dummy_df <- as.data.frame(model.matrix(~ Species - 1, data = raw.env.data))
+
+# Clean column names (remove the "Species" prefix and replace spaces)
+names(dummy_df) <- gsub("^Species", "", names(dummy_df))   # drop "Species"
+names(dummy_df) <- gsub("[[:space:]]+", "_", names(dummy_df))  # replace spaces with underscores
+
+# Bind back to the original data
+raw.env.data <- bind_cols(raw.env.data, dummy_df)
+raw.env.data<-raw.env.data%>%
+  rename(Vaccinium_vitis =`Vaccinium_vitis-idaea`)%>%
+  mutate(iWUE = A/gsw)
+head(raw.env.data)
+lowest_species <- raw.env.data %>%
+  group_by(Species) %>%               # group by species
+  summarise(mean_A = mean(A, na.rm = TRUE), .groups = "drop") %>%  # average A per species
+  arrange(mean_A) %>%                 # sort ascending
+  slice(1)                            # take the first row (lowest mean A)
+
+lowest_species
+
+
+
+
+
+
+# Prep for environmental plot
+tomst_long <- tomst %>%
+  mutate(Country = "S. Africa") %>%
+  select(Country, Elevation, datetime, T1, T2, AirTemp, moist_vol) %>%
+  pivot_longer(
+    cols = c(T1, T2, AirTemp, moist_vol),
+    names_to = "Variable",
+    values_to = "Value"
+  ) %>%
+  mutate(
+    Variable = recode(Variable,
+                      "T1" = "Soil temp",
+                      "T2" = "Ground temp",
+                      "AirTemp" = "Air temp",
+                      "moist_vol" = "Soil moisture")
+  )
+
+# ---------------------------------------------------------------
+# Clean and reshape Norway data (with proper moisture handling)
+# ---------------------------------------------------------------
+
+# Temperature variables
+norway_temp_long <- norwayTemps %>%
+  filter(str_detect(str_to_lower(climate_variable),
+                    "air|soil_temperature|ground_temperature")) %>%
+  mutate(
+    Country = "Norway",
+    Variable = case_when(
+      str_detect(climate_variable, "air") ~ "Air temp",
+      str_detect(climate_variable, "soil_temp") ~ "Soil temp",
+      str_detect(climate_variable, "ground") ~ "Ground temp"
+    ),
+    Value = value
+  ) %>%
+  select(Country, Elevation, datetime, Variable, Value)
+
+# Soil moisture variables (handled separately)
+norway_moist_long <- norwayTemps %>%
+  filter(str_to_lower(climate_variable) %in% c("soil_moisture", "soil moisture")) %>%
+  mutate(
+    Country = "Norway",
+    Variable = "Soil moisture",
+    Value = pmax(value, 0) * 100   # clamp negatives to 0, convert to %
+  ) %>%
+  select(Country, Elevation, datetime, Variable, Value)
+
+# Combine temperature + moisture data
+norway_long <- bind_rows(norway_temp_long, norway_moist_long)
+
+# ---------------------------------------------------------------
+# Combine both datasets
+# ---------------------------------------------------------------
+
+env_all_long <- bind_rows(tomst_long, norway_long) %>%
+  filter(!is.na(Value))
 
