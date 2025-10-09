@@ -6,9 +6,9 @@
 outputs/
 outputs/match.noneq.correct.dat
 match.noneq.correct.dat/
-Analyses 9.5.25
-discard.code
-schoolfield_fits
-weibull_fits
-TempSummary
-modelling_dat
+Analyses 9.5.25/
+discard.code/
+schoolfield_fits.pdf
+weibull_fits.pdf
+TempSummary.csv
+modelling_dat.csv
