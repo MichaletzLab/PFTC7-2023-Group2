@@ -45,11 +45,11 @@ pca_plot <- ggplot() +
   geom_segment(data = loadings,
                aes(x = 0, y = 0, xend = PC1 * 3, yend = PC2 * 3),
                arrow = arrow(length = unit(0.25, "cm")),
-               color = "blue", linewidth = 0.8) +
+               color = "black", linewidth = 0.8) +
   # arrow labels
   geom_text_repel(data = loadings,
                   aes(x = PC1 * 3.2, y = PC2 * 3.2, label = Variable),
-                  color = "blue", size = 4, fontface = "italic") +
+                  color = "black", size = 4, fontface = "italic") +
   # elevation labels
   geom_text_repel(data = unique_elevs,
                   aes(x = PC1, y = PC2, label = Elevation),

@@ -13,71 +13,56 @@ schoolfield <- function(temp, J_ref, E, E_D, T_opt, T_ref = 25) {
   return( J_ref * exp( E * (1/(k*T_ref) - 1/(k*temp)) ) / ( 1 + E/(E_D - E) * exp( (E_D/k) * (1/T_opt - 1/temp) ) ) )
 }
 
-fit_mod_schoolfield <- function(Data, curveID = "curveID", x = "Tleaf", y = "A", T_ref = 25, fitted_models = TRUE) {
+fit_mod_schoolfield_iWUE <- function(Data, curveID = "curveID", x = "Tleaf", y = "iWUE", T_ref = 25, fitted_models = TRUE) {
   models <- c("schoolfield")
   aic_values <- list()
   fits <- list()
   Data$T_ref = T_ref
+  pdf("schoolfield_iWUE_fits.pdf")
   
-  # Create a PDF file to save the plots
-  pdf("schoolfield_fits.pdf")
-  
-  # Standardize names of x and y
   if (x != "Tleaf") {
     Data$Tleaf = Data[[x]]
     Data[[x]] = NULL
   }
-  if (y != "A") {
-    Data$A = Data[[y]]
+  if (y != "iWUE") {
+    Data$iWUE = Data[[y]]
     Data[[y]] = NULL
   }
   
-  Data = subset(Data, A > 0)
+  Data = subset(Data, iWUE > 0)
   Data$curve_type = "Schoolfield"
   Data = Data %>% arrange(by_group = curveID)
-  
-  if (anyNA(Data$Tleaf) || anyNA(Data$A)) stop("Missing values detected.")
-  if (length(Data$Tleaf) != length(Data$A)) stop("Tleaf and A lengths do not match.")
-  
   schoolfield.results.data <- list()
   
   for (curve_id in unique(Data[[curveID]])) {
     curve_data <- subset(Data, curveID == curve_id)
     print(paste("Curve ID:", curve_id, ", Number of observations:", nrow(curve_data)))
     
-    plot <- ggplot(curve_data, aes(x = Tleaf, y = A)) +
+    plot <- ggplot(curve_data, aes(x = Tleaf, y = iWUE)) +
       geom_point() +
       theme_classic() +
       ggtitle(paste("Curve ID:", curve_id))
     
     for (model in models) {
-      if (model == "schoolfield") {
-        fit <- tryCatch({
-          nls.multstart::nls_multstart(
-            A ~ schoolfield(temp = Tleaf, J_ref, E, E_D, T_opt, T_ref),
-            data = curve_data,
-            iter = c(2,2,2,2),
-            start_lower = c(J_ref = 0, E = 0, E_D = 0.2, T_opt = 0),
-            start_upper = c(J_ref = 20, E = 2, E_D = 5, T_opt = 50),
-            supp_errors = 'Y',
-            na.action = na.omit,
-            lower = c(J_ref = -10, E = 0, E_D = 0, T_opt = 0)
-          )
-        }, error = function(e) {
-          print(paste("Fitting failed for Curve ID:", curve_id))
-          print(e)
-          return(NULL)
-        })
-        
-        predicted_schoolfield <- fitted(fit)
-        if (!is.null(fit)) {
-          r_sq = 1 - sum(resid(fit)^2) / sum((curve_data$A - mean(curve_data$A))^2)
-        } else {
-          r_sq <- NA
-        }
-      }
+      fit <- tryCatch({
+        nls.multstart::nls_multstart(iWUE ~ schoolfield(temp = Tleaf, J_ref, E, E_D, T_opt, T_ref),
+                                     data = curve_data,
+                                     iter = c(2,2,2,2),
+                                     start_lower = c(J_ref = 0, E = 0, E_D = 0.2, T_opt = 0),
+                                     start_upper = c(J_ref = 20, E = 2, E_D = 5, T_opt = 50),
+                                     supp_errors = 'Y',
+                                     na.action = na.omit,
+                                     lower = c(J_ref = -10, E = 0, E_D = 0, T_opt = 0))
+      }, error = function(e) {
+        print(paste("Fitting failed for Curve ID:", curve_id))
+        print(e)
+        return(NULL)
+      })
       
       if (!is.null(fit)) {
+        predicted_schoolfield <- fitted(fit)
+        r_sq <- 1 - sum(resid(fit)^2) / sum((curve_data$iWUE - mean(curve_data$iWUE))^2)
+        
         J_ref <- coef(fit)["J_ref"]
         J_ref_SE <- summary(fit)$coefficients[,'Std. Error']['J_ref']
         E <- coef(fit)["E"]
@@ -89,21 +74,21 @@ fit_mod_schoolfield <- function(Data, curveID = "curveID", x = "Tleaf", y = "A",
         AIC <- AIC(fit)
         
         # Predict across observed Tleaf range
-        predicted_A <- predict(fit, newdata = data.frame(Tleaf = curve_data$Tleaf))
-        df <- data.frame(Tleaf = curve_data$Tleaf, A = predicted_A)
+        predicted_iWUE <- predict(fit, newdata = data.frame(Tleaf = curve_data$Tleaf))
+        df <- data.frame(Tleaf = curve_data$Tleaf, iWUE = predicted_iWUE)
         df <- df[order(df$Tleaf), ]
         
-        # --- New breadth calc: 95% of Amax ---
-        Amax <- max(df$A, na.rm = TRUE)
-        A95 <- 0.95 * Amax
-        idx_max <- which.max(df$A)
+        # --- New breadth calc: 95% of iWUEmax ---
+        iWUEmax <- max(df$iWUE, na.rm = TRUE)
+        iWUE95 <- 0.95 * iWUEmax
+        idx_max <- which.max(df$iWUE)
         
         left_df <- df[1:idx_max, ]
         right_df <- df[idx_max:nrow(df), ]
         
-        # Find T at which A crosses 95% of Amax on each side
-        Tlower <- left_df$Tleaf[which.min(abs(left_df$A - A95))]
-        Tupper <- right_df$Tleaf[which.min(abs(right_df$A - A95))]
+        # Find T at which iWUE crosses 95% of iWUEmax on each side
+        Tlower <- left_df$Tleaf[which.min(abs(left_df$iWUE - iWUE95))]
+        Tupper <- right_df$Tleaf[which.min(abs(right_df$iWUE - iWUE95))]
         
         if (Tlower == min(df$Tleaf) || Tupper == max(df$Tleaf)) {
           breadth_95 <- NA
@@ -119,10 +104,10 @@ fit_mod_schoolfield <- function(Data, curveID = "curveID", x = "Tleaf", y = "A",
         # Add annotations to plot
         plot <- plot +
           geom_line(aes(y = predicted_schoolfield), color = "blue") +
-          geom_hline(yintercept = A95, linetype = "dashed", color = "purple") +
+          geom_hline(yintercept = iWUE95, linetype = "dashed", color = "purple") +
           geom_vline(xintercept = c(Tlower, Tupper), linetype = "dotted", color = "purple") +
           geom_vline(xintercept = T_opt, linetype = "dashed", color = "blue") +
-          annotate("text", x = max(curve_data$Tleaf), y = A95,
+          annotate("text", x = max(curve_data$Tleaf), y = iWUE95,
                    label = "95% breadth", hjust = 1, vjust = -1.5, color = "purple")
       }
     }
@@ -134,7 +119,5 @@ fit_mod_schoolfield <- function(Data, curveID = "curveID", x = "Tleaf", y = "A",
   return(schoolfield.results.data)
 }
 
-
-
-#schoolfield.results.data=fit_mod_schoolfield(at.subset3%>% select(Tleaf, A, curveID), x = "Tleaf", y = "A", T_ref = 25)
-#sum(schoolfield.results.data$AIC) # = -37008.26
+#schoolfield.results.data=fit_mod_schoolfield(at.subset3%>% select(Tleaf, iWUE, curveID), x = "Tleaf", y = "iWUE", T_ref = 25)
+#sum(schoolfield.results.data$iWUEIC) # = -37008.26

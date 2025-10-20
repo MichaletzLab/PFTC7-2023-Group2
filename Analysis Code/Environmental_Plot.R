@@ -1,11 +1,10 @@
 # --- Temperature palette (kept as-is) ---
-temp_colors <- c("Soil temp" = "#4A2125",   # brownish red
-                 "Ground temp" = "#4DAF4A", # medium green
-                 "Air temp"   = "#377EB8")  # medium blue
+temp_colors <- c("Soil temp"   = "#b05a3c",  # warm earthy orange
+                 "Ground temp" = "#9ab973",  # muted olive green
+                 "Air temp"    = "#648fff")  # cool blue
 
-# --- Complementary palette for other plots ---
-country_colors <- c("S. Africa" = "#007A4D",   # greenish
-                    "Norway"    = "#8B0000")   # deep red
+country_colors <- c("S. Africa" = "#377F6C",  # muted teal
+                    "Norway"    = "#984464")  # plum red
 
 # --- Temperature plot ---
 temp.plot <- env_all_long %>%
@@ -15,7 +14,7 @@ temp.plot <- env_all_long %>%
              shape = Country)) +
   geom_point(alpha = 0.4, size = 1.5) +
   geom_smooth(aes(linetype = Country),  # <-- added this
-              method = "lm", se = TRUE, linewidth = 1, alpha = 0.25) +
+              method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
   scale_color_manual(values = temp_colors, name = "Temperature class") +
   scale_linetype_manual(values = c("Norway" = "solid", "S. Africa" = "dashed"), 
                         name = "Country") +
@@ -33,7 +32,7 @@ moist.plot <- env_all_long %>%
              color = Country, shape = Country)) +
   geom_point(alpha = 0.4, size = 1.5) +
   geom_smooth(aes(linetype = Country),  # <-- added this
-              method = "lm", se = TRUE, linewidth = 1, alpha = 0.25) +
+              method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
   scale_color_manual(values = country_colors, name = "Country") +
   scale_linetype_manual(values = c("Norway" = "solid", "S. Africa" = "dashed"), 
                         name = "Country") +
@@ -49,7 +48,7 @@ height.plot <- ggplot(raw.env.data_pca,
                           color = Country, shape = Country)) +
   geom_point(size = 2, alpha = 0.8) +
   geom_smooth(aes(linetype = Country),  # <-- added this
-              method = "lm", se = TRUE, linewidth = 1, alpha = 0.25) +
+              method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
   scale_color_manual(values = country_colors, name = "Country") +
   scale_linetype_manual(values = c("Norway" = "solid", "S. Africa" = "dashed"),
                         name = "Country") +
@@ -65,14 +64,14 @@ pc.plot <- ggplot(raw.env.data_pca,
                       color = Country, shape = Country)) +
   geom_point(size = 2, alpha = 0.8) +
   geom_smooth(aes(linetype = Country),  # <-- added this
-              method = "lm", se = TRUE, linewidth = 1, alpha = 0.25) +
+              method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
   scale_color_manual(values = country_colors, name = "Country") +
   scale_linetype_manual(values = c("Norway" = "solid", "S. Africa" = "dashed"),
                         name = "Country") +
   scale_shape_manual(values = c("Norway" = 16, "S. Africa" = 17),
                      name = "Country") +
   theme_classic(base_size = 14) +
-  labs(x = "Elevation (m a.s.l.)", y = "PC1") +
+  labs(x = "Elevation (m a.s.l.)", y = "PC1 (dimensionless)") +
   theme(legend.position = "none")
 
 
@@ -103,7 +102,9 @@ plot.4way <- ggarrange(
   height.plot_noleg, pc.plot_noleg,
   nrow = 2, ncol = 2,
   labels = c("A", "B", "C", "D"),
-  label.x = 0.05, label.y = 0.98
+  label.x = 0.11,   # move letters slightly right
+  label.y = 0.98,
+  font.label = list(size = 14, face = "bold")
 )
 
 # --- Combine with PCA and legends ---
@@ -122,7 +123,7 @@ final_with_legends <- plot_grid(
   rel_heights = c(1, 0.08, 0.08)
 )
 
-final_with_legends
+final_with_legends # 990 x 550
 
 ###########################################
 ## P-values for text: ####

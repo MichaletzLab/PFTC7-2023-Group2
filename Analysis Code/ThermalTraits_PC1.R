@@ -69,14 +69,10 @@ summary(mod.Ed <- gam(E_D ~ s(PC1, k=3) + ###
                         Species,
                       data = ThermTraits.dat,
                       method="REML"))
-summary(mod.breadth <- gam(breadth ~ s(PC1, k=3) +
+summary(mod.breadth <- gam(breadth_95 ~ s(PC1, k=3) +
                         Species,
                       data = ThermTraits.dat,
                       method="REML"))
-summary(mod.b <- gam(b ~ s(PC1, k=3) +
-                             Species,
-                           data = ThermTraits.dat,
-                           method="REML"))
 summary(mod.getbreadth <- gam(getbreadth_90 ~ s(PC1, k=3) + ###
                        Species,
                      data = ThermTraits.dat,
@@ -92,13 +88,8 @@ School_Topt_Plot <- ggplot(ThermTraits.dat, aes(x = PC1, y = T_opt_school, color
   theme_classic(base_size = 14) +
   labs(x = "PC1",
        y = expression(T[opt]~"(°C)"),
-       color = "Species")
-Weib_Topt_Plot <- ggplot(ThermTraits.dat, aes(x = PC1, y = T_opt_weib, color = Species)) +
-  geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
-  labs(x = "PC1",
-       y = expression(T[opt]~"(°C)"),
-       color = "Species")
+       color = "Species",
+       title="A")
 Ea_Plot <- ggplot(ThermTraits.dat, aes(x = PC1, y = E, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
   theme_classic(base_size = 14) +
@@ -111,11 +102,11 @@ Ed_Plot <- ggplot(ThermTraits.dat, aes(x = PC1, y = E_D, color = Species)) +
   labs(x = "PC1",
        y = expression(E[d]~"(eV)"),
        color = "Species")
-breadth_Plot <- ggplot(ThermTraits.dat, aes(x = PC1, y = getbreadth_90, color = Species)) +
+breadth_Plot <- ggplot(ThermTraits.dat, aes(x = PC1, y = breadth_95, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
   theme_classic(base_size = 14) +
   labs(x = "PC1",
        y = "breadth (°C)",
        color = "Species")
 
-ggarrange(School_Topt_Plot, breadth_Plot, Ea_Plot, Ed_Plot, nrow=2, ncol=2, common.legend = TRUE, labels = c("A","B","C","D"),legend="right")
+A.Therm.plot <- ggarrange(School_Topt_Plot, breadth_Plot, Ea_Plot, Ed_Plot, nrow=2, ncol=2, common.legend = TRUE, labels = c("A","B","C","D"),legend="right")

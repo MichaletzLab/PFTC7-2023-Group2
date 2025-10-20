@@ -5,34 +5,34 @@ library(dplyr)
 library(rTPC)
 library(ggplot2)
 
-fit_weibull_breadth <- function(Data, curveID = "curveID", x = "Tleaf", y = "A") {
+fit_weibull.gsw_breadth <- function(Data, curveID = "curveID", x = "Tleaf", y = "gsw") {
   models <- c("weibull_1995")
   aic_values <- list()
   fits <- list()  # Store model fits
   
   # Create a PDF file to save the plots
-  pdf("weibull_fits.pdf")
+  pdf("weibull.gsw_fits.pdf")
   
   # Standardize names of x and y for use throughout
   if (x != "Tleaf") {
     Data$Tleaf <- Data[[x]] # Rename X as Tleaf
     Data[[x]] <- NULL      # Get rid of originals
   }
-  if (y != "A") {
-    Data$A <- Data[[y]] # Rename Y as A
+  if (y != "gsw") {
+    Data$gsw <- Data[[y]] # Rename Y as A
     Data[[y]] <- NULL      # Get rid of originals
   }
-  Data <- subset(Data, A > 0)
+  Data <- subset(Data, gsw > 0)
   # Check for missing values
-  if (anyNA(Data$Tleaf) || anyNA(Data$A)) {
+  if (anyNA(Data$Tleaf) || anyNA(Data$gsw)) {
     stop("Missing values detected in the input data.")
   }
   # Check lengths
-  if (length(Data$Tleaf) != length(Data$A)) {
+  if (length(Data$Tleaf) != length(Data$gsw)) {
     stop("The lengths of Tleaf and A columns do not match.")
   }
   # Initialize a list to store the results
-  weibull.results.data <- list()
+  weibull.gsw.results.data <- list()
   prediction.data <- list()
   
   # Curve fitting loop
@@ -43,7 +43,7 @@ fit_weibull_breadth <- function(Data, curveID = "curveID", x = "Tleaf", y = "A")
     # Create a new page in the PDF for each curve
     plot_counter <- 0
     
-    plot <- ggplot(curve_data, aes(x = Tleaf, y = A)) +
+    plot <- ggplot(curve_data, aes(x = Tleaf, y = gsw)) +
       geom_point() +
       theme_classic() +
       ggtitle(paste("Curve ID:", curve_id))
@@ -53,7 +53,7 @@ fit_weibull_breadth <- function(Data, curveID = "curveID", x = "Tleaf", y = "A")
       if (model == "weibull_1995") {
         # Fit weibull_1995
         fit <- tryCatch({
-          nls.multstart::nls_multstart(A ~ weibull_1995(temp = Tleaf, a, topt, b, c),
+          nls.multstart::nls_multstart(gsw ~ weibull_1995(temp = Tleaf, a, topt, b, c),
                                        data = curve_data,
                                        iter = c(3,3,3,3),
                                        start_lower = c(a = 0,topt = 10, b = 0, c = 0),
@@ -70,8 +70,8 @@ fit_weibull_breadth <- function(Data, curveID = "curveID", x = "Tleaf", y = "A")
         predicted_weibull <- fitted(fit)
         # Calculate R-squared for weibull_1995
         RSS <- sum(residuals(fit)^2) # Calculate residual sum of squares
-        mean_y <- mean(curve_data$A) # Calculate total sum of squares
-        TSS <- sum((curve_data$A - mean_y)^2)
+        mean_y <- mean(curve_data$gsw) # Calculate total sum of squares
+        TSS <- sum((curve_data$gsw - mean_y)^2)
       }
       
       if(typeof(fit) != "NULL") { # If the fit was successful, extract parameters estimates and SE
@@ -86,34 +86,34 @@ fit_weibull_breadth <- function(Data, curveID = "curveID", x = "Tleaf", y = "A")
         AIC <- AIC(fit)
         r_sq <- 1 - sum(resid(fit)^2) / sum((curve_data$A - mean(curve_data$A))^2)
         
-        predicted_A <- predict(fit, newdata = data.frame(Tleaf = curve_data$Tleaf))
+        predicted_gsw <- predict(fit, newdata = data.frame(Tleaf = curve_data$Tleaf))
         
         # Store the predicted values along with Tleaf and curveID
-        prediction.data[[curve_id]] <- data.frame(curveID = curve_id, Tleaf = curve_data$Tleaf, predicted_A)
+        prediction.data[[curve_id]] <- data.frame(curveID = curve_id, Tleaf = curve_data$Tleaf, predicted_gsw)
         
         # Calculate Amax
-        Amax <- max(predicted_A)
-        # Calculate breadth at 95%
+        gswmax <- max(predicted_gsw)
+        # Calculate breadth at 80%
         getbreadth_90 <- get_breadth(fit, level = 0.95)
         
         # Try to get breadth another way
-        Amin <- min(predicted_A)
-        Arange <- Amax - Amin
-        A90max <- 0.95 * Arange
-        Aat90b <- Amin + A90max
+        gswmin <- min(predicted_gsw)
+        gswrange <- gswmax - gswmin
+        gsw90max <- 0.95 * gswrange
+        gswat90b <- gswmin + gsw90max
         
         # Find the two Tleaf values closest to Aat90b on either side of Amax
-        df <- data.frame(Tleaf = curve_data$Tleaf, A = predicted_A)
+        df <- data.frame(Tleaf = curve_data$Tleaf, gsw = predicted_gsw)
         df <- df[order(df$Tleaf), ]
-        idx_max <- which.max(df$A)
+        idx_max <- which.max(df$gsw)
         
         # Find closest value to Aat90b on the left of Amax
         left_df <- df[1:idx_max, ]
-        Tlower <- left_df$Tleaf[which.min(abs(left_df$A - Aat90b))]
+        Tlower <- left_df$Tleaf[which.min(abs(left_df$gsw - gswat90b))]
         
         # Find closest value to Aat90b on the right of Amax
-        right_df <- df[idx_max:length(df$A), ]
-        Tupper <- right_df$Tleaf[which.min(abs(right_df$A - Aat90b))]
+        right_df <- df[idx_max:length(df$gsw), ]
+        Tupper <- right_df$Tleaf[which.min(abs(right_df$gsw - gswat90b))]
         
         # Check if Tlower and Tupper are at the data boundaries
         if (Tlower == min(df$Tleaf) || Tupper == max(df$Tleaf)) {
@@ -122,14 +122,14 @@ fit_weibull_breadth <- function(Data, curveID = "curveID", x = "Tleaf", y = "A")
           mjcbreadth <- Tupper - Tlower
         }
         
-        get_90_A <- Amax*0.95
+        get_90_gsw <- gswmax*0.95
         # Check if the A value of the purple dot is below either side of the range
-        if (get_90_A < min(df$A[left_df$A <= get_90_A]) || get_90_A < min(df$A[right_df$A >= get_90_A])) {
+        if (get_90_gsw < min(df$gsw[left_df$gsw <= get_90_gsw]) || get_90_gsw < min(df$gsw[right_df$gsw >= get_90_gsw])) {
           getbreadth_90 <- NA
         }
         
         # Store the results for this curve ID
-        weibull.results.data[[curve_id]] <- data.frame(curveID = curve_id, a, a_SE, b, b_SE, c_D, c_SE, T_opt, T_opt_SE, AIC, r_sq, Tlower, Tupper, mjcbreadth, getbreadth_90)
+        weibull.gsw.results.data[[curve_id]] <- data.frame(curveID = curve_id, a, a_SE, b, b_SE, c_D, c_SE, T_opt, T_opt_SE, AIC, r_sq, Tlower, Tupper, mjcbreadth, getbreadth_90)
       }
       if (!is.null(fit)) {
         fits[[model]] <- fit
@@ -137,12 +137,12 @@ fit_weibull_breadth <- function(Data, curveID = "curveID", x = "Tleaf", y = "A")
         # Add fitted curves to the plots
         if (!is.null(predicted_weibull)) {
           plot <- plot + geom_line(aes(y = predicted_weibull), color = "blue") +
-            geom_text(aes(x = max(curve_data$Tleaf), y = max(curve_data$A), 
+            geom_text(aes(x = max(curve_data$Tleaf), y = max(curve_data$gsw), 
                           label = paste("Weibull R^2 =", round(r_sq, 3))), hjust = 1, vjust = -1, color = "blue") +
-            geom_point(data = data.frame(Tleaf = c(Tlower, Tupper), A = predict(fit, newdata = data.frame(Tleaf = c(Tlower, Tupper)))),
-                       aes(x = Tleaf, y = A), color = "pink", size = 3) +
-            geom_point(data = data.frame(Tleaf = T_opt, A = get_90_A),
-                       aes(x = Tleaf, y = A), color = "purple", size = 3)
+            geom_point(data = data.frame(Tleaf = c(Tlower, Tupper), gsw = predict(fit, newdata = data.frame(Tleaf = c(Tlower, Tupper)))),
+                       aes(x = Tleaf, y = gsw), color = "pink", size = 3) +
+            geom_point(data = data.frame(Tleaf = T_opt, gsw = get_90_gsw),
+                       aes(x = Tleaf, y = gsw), color = "purple", size = 3)
         }
       } else {
         # Use provided fitted models
@@ -157,19 +157,19 @@ fit_weibull_breadth <- function(Data, curveID = "curveID", x = "Tleaf", y = "A")
   }
   
   # Combine results for all curve IDs into a single data frame
-  weibull.results.data <- do.call(rbind, weibull.results.data)
+  weibull.gsw.results.data <- do.call(rbind, weibull.gsw.results.data)
   
   # Combine prediction data for all curve IDs into a single data frame
   prediction.data <- do.call(rbind, prediction.data)
   
   # Save the prediction data to a CSV file
-  write.csv(prediction.data, "prediction_data.csv", row.names = FALSE)
+  write.csv(prediction.data, "prediction.gsw_data.csv", row.names = FALSE)
   
   # Close the PDF device
   dev.off()
   
   # Return the combined data frame
-  return(weibull.results.data)
+  return(weibull.gsw.results.data)
 }
 
 #weibull.results.data <- fit_weibull_breadth(at.subset3)
