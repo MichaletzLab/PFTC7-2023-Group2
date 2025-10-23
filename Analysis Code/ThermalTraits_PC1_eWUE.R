@@ -57,7 +57,7 @@ summary(mod.breadth <- gam(breadth_95 ~ s(PC1, k=3) +
                              Species,
                            data = ThermTraits.dat.e,
                            method="REML"))
-##None are significant! Interestine... Small problem though because this loses 
+##None are significant! Interesting... Small problem though because this loses 
 #the error terms that I have stored (SE). I think this will overstate our 
 #confidence though since the error is understated which means that since  
 #our results are insignificant this is OK.
@@ -66,26 +66,26 @@ summary(mod.breadth <- gam(breadth_95 ~ s(PC1, k=3) +
 e.School_Topt_Plot <- ggplot(ThermTraits.dat.e, aes(x = PC1, y = T_opt_school, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
   theme_classic(base_size = 14) +
-  labs(x = "PC1",
+  labs(x = "PC1 (dimensionless)",
        y = expression(T[opt]~"(°C)"),
        color = "Species",
-       title="iWUE (A/E)")
+       title=expression(WUE ~ "(" * mu * mol ~ mol^-1 * ")"))
 e.Ea_Plot <- ggplot(ThermTraits.dat.e, aes(x = PC1, y = E, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
   theme_classic(base_size = 14) +
-  labs(x = "PC1",
+  labs(x = "PC1 (dimensionless)",
        y = expression(E[a]~"(eV)"),
        color = "Species")
 e.Ed_Plot <- ggplot(ThermTraits.dat.e, aes(x = PC1, y = E_D, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
   theme_classic(base_size = 14) +
-  labs(x = "PC1",
+  labs(x = "PC1 (dimensionless)",
        y = expression(E[d]~"(eV)"),
        color = "Species")
 e.breadth_Plot <- ggplot(ThermTraits.dat.e, aes(x = PC1, y = breadth_95, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
   theme_classic(base_size = 14) +
-  labs(x = "PC1",
+  labs(x = "PC1 (dimensionless)",
        y = "breadth (°C)",
        color = "Species")
 
@@ -94,14 +94,7 @@ eWUE.Therm.plot <- ggarrange(e.School_Topt_Plot, e.breadth_Plot, e.Ea_Plot, e.Ed
 
 
 
-# also run a linear like for E
-library(lme4)
-library(lmerTest)
-library(broom.mixed)
-library(dplyr)
-library(ggplot2)
-library(tibble)
-library(ggpubr)
+# also run a linear mixed effects for eWUE
 
 # --- Fit model
 mod <- lmer(eWUE ~ Tleaf * PC1 + (1 + Tleaf | Species/curveID), data = raw.env.data_pca)

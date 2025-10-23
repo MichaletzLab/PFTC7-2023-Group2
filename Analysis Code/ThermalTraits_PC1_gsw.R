@@ -66,26 +66,26 @@ summary(mod.breadth <- gam(breadth_95 ~ s(PC1, k=3) +
 g.School_Topt_Plot <- ggplot(ThermTraits.dat.g, aes(x = PC1, y = T_opt_school, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
   theme_classic(base_size = 14) +
-  labs(x = "PC1",
+  labs(x = "PC1 (dimensionless)",
        y = expression(T[opt]~"(°C)"),
        color = "Species",
-       title="gsw")
+       title=expression(g[sw]~"(" * mol ~ m^-2 ~ s^-1 * ")"))
 g.Ea_Plot <- ggplot(ThermTraits.dat.g, aes(x = PC1, y = E, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
   theme_classic(base_size = 14) +
-  labs(x = "PC1",
+  labs(x = "PC1 (dimensionless)",
        y = expression(E[a]~"(eV)"),
        color = "Species")
 g.Ed_Plot <- ggplot(ThermTraits.dat.g, aes(x = PC1, y = E_D, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
   theme_classic(base_size = 14) +
-  labs(x = "PC1",
+  labs(x = "PC1 (dimensionless)",
        y = expression(E[d]~"(eV)"),
        color = "Species")
 g.breadth_Plot <- ggplot(ThermTraits.dat.g, aes(x = PC1, y = breadth_95, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
   theme_classic(base_size = 14) +
-  labs(x = "PC1",
+  labs(x = "PC1 (dimensionless)",
        y = "breadth (°C)",
        color = "Species")
 

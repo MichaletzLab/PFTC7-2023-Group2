@@ -52,30 +52,30 @@ pval_intercept <- summary(mod)$coefficients["PC1", "Pr(>|t|)"]
 
 # --- Slope plot
 p_slope <- ggplot(slope_data, aes(x = PC1, y = slope_Tleaf, color = Species)) +
-  geom_point(alpha = 0.7) +
+  geom_line() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   labs(
-    x = "PC1 (Environmental Gradient)",
+    x = "PC1 (dimensionless)",
     y = expression(paste("Slope of ", E, " vs. ", T[leaf])),
     color = "Species"
   ) +
   annotate("text",
            x = Inf, y = Inf,
-           label = paste0("Interaction p = ", signif(pval_slope, 3)),
-           hjust = 1.1, vjust = 1.5, size = 4.5) +
+           label = paste0("p = ", signif(pval_slope, 3)),
+           hjust = 1.1, vjust = 8, size = 4.5) +
   theme_classic(base_size = 13)
 
 # --- Intercept plot
 p_intercept <- ggplot(intercept_data, aes(x = PC1, y = intercept, color = Species)) +
-  geom_point(alpha = 0.7) +
+  geom_line() +
   labs(
-    x = "PC1 (Environmental Gradient)",
+    x = "PC1 (dimensionless)",
     y = expression(paste("Intercept of ", E, " vs. ", T[leaf])),
     color = "Species"
   ) +
   annotate("text",
            x = Inf, y = Inf,
-           label = paste0("p(PC1) = ", signif(pval_intercept, 3)),
+           label = paste0("p = ", signif(pval_intercept, 3)),
            hjust = 1.1, vjust = 1.5, size = 4.5) +
   theme_classic(base_size = 13)
 
