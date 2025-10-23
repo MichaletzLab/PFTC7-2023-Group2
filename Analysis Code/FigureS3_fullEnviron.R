@@ -14,18 +14,16 @@ make_pred_full <- function(model, response, n = 200) {
     curveID           = placeholder_curveID
   )
   
-  # Predict
-  newdat$fit <- predict(model, newdata = newdat, type = "response", exclude = "s(curveID)")
+  # Predict with SEs
+  preds <- predict(model, newdata = newdat, type = "response", se.fit = TRUE, exclude = "s(curveID)")
+  
+  newdat$fit <- preds$fit
+  newdat$se  <- preds$se.fit
+  newdat$upper <- newdat$fit + 1.96 * newdat$se
+  newdat$lower <- newdat$fit - 1.96 * newdat$se
   newdat$response <- response
   newdat
 }
-
-pred_A   <- make_pred_full(gam_mod_full_environ_A, "A")
-pred_E   <- make_pred_full(gam_mod_full_environ_E, "E")
-pred_gsw <- make_pred_full(gam_mod_full_environ_gsw, "gsw")
-pred_iW  <- make_pred_full(gam_mod_full_environ_iWUE, "iWUE")
-pred_eW <- make_pred_full(gam_mod_full_environ_WUE, "WUE")
-
 
 make_pred_full_PC <- function(model, response, n = 200) {
   
@@ -43,11 +41,23 @@ make_pred_full_PC <- function(model, response, n = 200) {
     curveID   = placeholder_curveID
   )
   
-  # Predict
-  newdat$fit <- predict(model, newdata = newdat, type = "response", exclude = "s(curveID)")
+  # Predict with SEs
+  preds <- predict(model, newdata = newdat, type = "response", se.fit = TRUE, exclude = "s(curveID)")
+  
+  newdat$fit <- preds$fit
+  newdat$se  <- preds$se.fit
+  newdat$upper <- newdat$fit + 1.96 * newdat$se
+  newdat$lower <- newdat$fit - 1.96 * newdat$se
   newdat$response <- response
   newdat
 }
+
+
+pred_A   <- make_pred_full(gam_mod_full_environ_A, "A")
+pred_E   <- make_pred_full(gam_mod_full_environ_E, "E")
+pred_gsw <- make_pred_full(gam_mod_full_environ_gsw, "gsw")
+pred_iW  <- make_pred_full(gam_mod_full_environ_iWUE, "iWUE")
+pred_eW <- make_pred_full(gam_mod_full_environ_WUE, "WUE")
 
 pred_A_pc   <- make_pred_full_PC(gam_mod_full_PC_A, "A")
 pred_E_pc  <- make_pred_full_PC(gam_mod_full_PC_E, "E")
@@ -70,7 +80,6 @@ plot_environ_compare <- function(pred_env, pred_pc, raw_df, response_name, ymax 
     response_name
   )
   
-  # Optionally filter by ymax
   if (!is.null(ymax)) {
     raw_df   <- raw_df   %>% filter(.data[[response_name]] < ymax)
     pred_env <- pred_env %>% filter(fit < ymax)
@@ -81,18 +90,21 @@ plot_environ_compare <- function(pred_env, pred_pc, raw_df, response_name, ymax 
     geom_point(data = raw_df,
                aes(x = Tleaf, y = .data[[response_name]]),
                alpha = 0.005, size = 1) +
-    geom_line(data = pred_env,
-              aes(x = Tleaf, y = fit, color = "Full Env"),
-              linewidth = 1.2) +
-    geom_line(data = pred_pc,
-              aes(x = Tleaf, y = fit, color = "PC GAM"),
-              linewidth = 1.2, linetype = "dashed") +
+    # Confidence ribbons
+    geom_ribbon(data = pred_env, aes(x = Tleaf, ymin = lower, ymax = upper),
+                fill = "blue", alpha = 0.4) +
+    geom_ribbon(data = pred_pc, aes(x = Tleaf, ymin = lower, ymax = upper),
+                fill = "red", alpha = 0.4) +
+    # Fitted lines
+    geom_line(data = pred_env, aes(x = Tleaf, y = fit, color = "Full Env"), linewidth = 1.2) +
+    geom_line(data = pred_pc,  aes(x = Tleaf, y = fit, color = "PC GAM"), linewidth = 1.2, linetype = "dashed") +
     scale_color_manual(values = c("Full Env" = "blue", "PC GAM" = "red")) +
     theme_classic() +
     labs(x = expression(Leaf~Temperature~(degree*C)),
          y = y_lab,
          color = "")
 }
+
 
 # --- Create top-row plots ---
 pA  <- plot_environ_compare(pred_A,  pred_A_pc,  raw.env.data_pca, "A")

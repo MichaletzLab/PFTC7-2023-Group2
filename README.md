@@ -6,11 +6,15 @@ This repository contains:
 
   To run this code: 
     1. Clone repository to personal device.
-    2. Open CleanData.CreateMainFile.R and run this file (set working directory to PFTC7-2023 folder).
-    3. Open CleanNorway.R and run this file
-    This will generate results2.csv which is the cleaned and complete data file.
-    4. Open pftc7_vpd_analysis and run configure.datfile.R
-    5. Run the Medlyn.g1.R file and the redblueFigs.R file for generation of Figure 3 and S1
-    6. Open Analysis Code and run the DataPrep.R file
-    7. Open the rest of the figure files in the Analysis Code folder and run them (starting with PCA)
-    8. You should never edit the code folder nor the data folder.
+    2. Open the Analysis Code folder and run the CleanNorway.R file
+    3. Open CleanData.CreateMainFile.R and run this file
+    4. Run the DataPrep.R file
+    5. Run the Models.R file followed by the PCA.R file
+    6. Run Figure1.R and Figure2.R
+    7. Prior to running Figure3and4_ThermalTraits.R, run the 5 ThermalTraits files
+    8. Then run Figure3and4_ThermalTraits.R
+    9. Open FigureS1and2_VPDanalysis.R and run configure.datfile.R
+    10.Run the FigureS1.R file for generation of Figure S1
+    11.Run the FigureS2.R file for generation of Figure S2
+    12.Back in the Analysis Code folder, run the FigureS3_fullEnviron.R file
+    13.You should never edit the code folder nor the data folder.

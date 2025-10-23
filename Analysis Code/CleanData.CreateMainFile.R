@@ -14,6 +14,7 @@ library(readxl)
 library(rTPC)
 library(gratia)
 library(mgcv)
+library(data.table)
 
 # Set wd to main R project
 source("code/correct_6800_functions.R")
