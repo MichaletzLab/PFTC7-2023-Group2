@@ -65,31 +65,39 @@ summary(mod.breadth <- gam(breadth_95 ~ s(PC1, k=3) +
 #Visualize:
 e.School_Topt_Plot <- ggplot(ThermTraits.dat.e, aes(x = PC1, y = T_opt_school, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) +
   labs(x = "PC1 (dimensionless)",
        y = expression(T[opt]~"(°C)"),
        color = "Species",
        title=expression(WUE ~ "(" * mu * mol ~ mol^-1 * ")"))
 e.Ea_Plot <- ggplot(ThermTraits.dat.e, aes(x = PC1, y = E, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) +
   labs(x = "PC1 (dimensionless)",
        y = expression(E[a]~"(eV)"),
        color = "Species")
 e.Ed_Plot <- ggplot(ThermTraits.dat.e, aes(x = PC1, y = E_D, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) +
   labs(x = "PC1 (dimensionless)",
        y = expression(E[d]~"(eV)"),
        color = "Species")
 e.breadth_Plot <- ggplot(ThermTraits.dat.e, aes(x = PC1, y = breadth_95, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) +
   labs(x = "PC1 (dimensionless)",
-       y = "breadth (°C)",
+       y = expression(Theta~"(°C)"), 
        color = "Species")
 
-eWUE.Therm.plot <- ggarrange(e.School_Topt_Plot, e.breadth_Plot, e.Ea_Plot, e.Ed_Plot, nrow=2, ncol=2, common.legend = TRUE, labels = c("A","B","C","D"),legend="right")
+#eWUE.Therm.plot <- ggarrange(e.School_Topt_Plot, e.breadth_Plot, e.Ea_Plot, e.Ed_Plot, nrow=2, ncol=2, common.legend = TRUE, labels = c("A","B","C","D"),legend="right")
 
 
 
@@ -145,7 +153,7 @@ peW_slope <- ggplot(slope_data, aes(x = PC1, y = slope_Tleaf, color = Species)) 
   geom_point(alpha = 0.7) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   labs(
-    x = "PC1 (Environmental Gradient)",
+    x = "PC1 (Environmental gradient)",
     y = expression(paste("Slope of ", "A/E", " vs. ", T[leaf])),
     color = "Species"
   ) +
@@ -153,13 +161,15 @@ peW_slope <- ggplot(slope_data, aes(x = PC1, y = slope_Tleaf, color = Species)) 
            x = Inf, y = Inf,
            label = paste0("Interaction p = ", signif(pval_slope, 3)),
            hjust = 1.1, vjust = 1.5, size = 4.5) +
-  theme_classic(base_size = 13)
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown())
 
 # --- Intercept plot
 peW_intercept <- ggplot(intercept_data, aes(x = PC1, y = intercept, color = Species)) +
   geom_point(alpha = 0.7) +
   labs(
-    x = "PC1 (Environmental Gradient)",
+    x = "PC1 (Environmental gradient)",
     y = expression(paste("Intercept of ", "A/E", " vs. ", T[leaf])),
     color = "Species"
   ) +
@@ -167,9 +177,6 @@ peW_intercept <- ggplot(intercept_data, aes(x = PC1, y = intercept, color = Spec
            x = Inf, y = Inf,
            label = paste0("p(PC1) = ", signif(pval_intercept, 3)),
            hjust = 1.1, vjust = 1.5, size = 4.5) +
-  theme_classic(base_size = 13)
-
-# --- Combine with labels A and B
-ggarrange(peW_slope, peW_intercept,
-          labels = c("A", "B"), common.legend=TRUE, legend="right",label.x = 0.1,
-          ncol = 1, nrow = 2)
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown())

@@ -22,18 +22,24 @@ pc_scores <- as.data.frame(pca_res$x) %>%
 # Identify unique elevations among sampled points
 unique_elevs <- pc_scores %>%
   group_by(Elevation) %>%
-  slice(1)  # first occurrence of each Elevation
+  slice(1) %>%
+  ungroup() %>%
+  mutate(Elev_label = if_else(Elevation < 1500,
+                              paste0("N", round(Elevation)),
+                              paste0("SA", round(Elevation))))
 
 ### Plotting ####
 loadings <- as.data.frame(pca_res$rotation) %>%
   tibble::rownames_to_column("Variable") %>%
-  mutate(Variable = recode(Variable,
-                           mean_moist_pct = "Soil moisture",
-                           mean_T1 = "Soil temp",
-                           mean_T2 = "Ground temp",
-                           mean_air = "Air temp",
-                           vegetation_height = "VegHeight"
+  mutate(Variable = dplyr::recode(
+    Variable,
+    "mean_moist_pct"    = "Soil moisture",
+    "mean_T1"   = "Soil, -6 cm",
+    "mean_T2" = "Soil, 0 cm",
+    "mean_air"    = "Air, 15 cm",
+    "vegetation_height" = "VegHeight"
   ))
+
 
 # --- Create biplot manually for full control ---
 pca_plot <- ggplot() +
@@ -52,10 +58,10 @@ pca_plot <- ggplot() +
                   color = "black", size = 4, fontface = "italic") +
   # elevation labels
   geom_text_repel(data = unique_elevs,
-                  aes(x = PC1, y = PC2, label = Elevation),
+                  aes(x = PC1, y = PC2, label = Elev_label),
                   color = "black", size = 4,
                   box.padding = 0.3,
-                  segment.color = "grey50") +
+                  segment.color = "grey50")+
   theme_classic(base_size = 14) +
   geom_hline(yintercept=0, linetype="dashed")+
   geom_vline(xintercept=0, linetype="dashed")+
@@ -75,3 +81,4 @@ pc_scores <- as.data.frame(pca_res$x)
 
 raw.env.data_pca <- raw.env.data %>%
   bind_cols(pc_scores)
+

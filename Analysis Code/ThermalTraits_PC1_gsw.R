@@ -65,28 +65,39 @@ summary(mod.breadth <- gam(breadth_95 ~ s(PC1, k=3) +
 #Visualize:
 g.School_Topt_Plot <- ggplot(ThermTraits.dat.g, aes(x = PC1, y = T_opt_school, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) +
   labs(x = "PC1 (dimensionless)",
        y = expression(T[opt]~"(°C)"),
        color = "Species",
        title=expression(g[sw]~"(" * mol ~ m^-2 ~ s^-1 * ")"))
 g.Ea_Plot <- ggplot(ThermTraits.dat.g, aes(x = PC1, y = E, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) +
   labs(x = "PC1 (dimensionless)",
        y = expression(E[a]~"(eV)"),
        color = "Species")
 g.Ed_Plot <- ggplot(ThermTraits.dat.g, aes(x = PC1, y = E_D, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) +
   labs(x = "PC1 (dimensionless)",
        y = expression(E[d]~"(eV)"),
        color = "Species")
 g.breadth_Plot <- ggplot(ThermTraits.dat.g, aes(x = PC1, y = breadth_95, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
-  labs(x = "PC1 (dimensionless)",
-       y = "breadth (°C)",
-       color = "Species")
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) +
+  labs(
+    x = "PC1 (dimensionless)",
+    y = expression(Theta~"(°C)"),  # <-- replace "breadth" with Θ
+    color = "Species"
+  )
 
-gsw.Therm.plot <- ggarrange(g.School_Topt_Plot, g.breadth_Plot, g.Ea_Plot, g.Ed_Plot, nrow=2, ncol=2, common.legend = TRUE, labels = c("A","B","C","D"),legend="right")
+
+#gsw.Therm.plot <- ggarrange(g.School_Topt_Plot, g.breadth_Plot, g.Ea_Plot, g.Ed_Plot, nrow=2, ncol=2, common.legend = TRUE, labels = c("A","B","C","D"),legend="right")

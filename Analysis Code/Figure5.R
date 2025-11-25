@@ -4,10 +4,12 @@ library(broom.mixed)
 library(dplyr)
 library(ggplot2)
 library(tibble)
+library(ggtext)
 library(ggpubr)
 
 # --- Fit model
-mod <- lmer(E ~ Tleaf * PC1 + (1 + Tleaf | Species/curveID), data = raw.env.data_pca)
+mod <- lmerTest::lmer(E ~ Tleaf * PC1 + (1 + Tleaf | Species/curveID),
+                      data = raw.env.data_pca)
 summary(mod)
 
 # --- Extract fixed effects
@@ -63,7 +65,9 @@ p_slope <- ggplot(slope_data, aes(x = PC1, y = slope_Tleaf, color = Species)) +
            x = Inf, y = Inf,
            label = paste0("p = ", signif(pval_slope, 3)),
            hjust = 1.1, vjust = 8, size = 4.5) +
-  theme_classic(base_size = 13)
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown())
 
 # --- Intercept plot
 p_intercept <- ggplot(intercept_data, aes(x = PC1, y = intercept, color = Species)) +
@@ -77,9 +81,29 @@ p_intercept <- ggplot(intercept_data, aes(x = PC1, y = intercept, color = Specie
            x = Inf, y = Inf,
            label = paste0("p = ", signif(pval_intercept, 3)),
            hjust = 1.1, vjust = 1.5, size = 4.5) +
-  theme_classic(base_size = 13)
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) 
 
 # --- Combine with labels A and B
-ggarrange(p_slope, p_intercept,
-          labels = c("A", "B"), common.legend=TRUE, legend="right",label.x = 0.1,
-          ncol = 1, nrow = 2)
+library(cowplot)
+
+# Extract legend from one plot
+legend <- get_legend(
+  p_slope + theme(legend.position = "right")
+)
+
+# Remove legends from individual plots
+p_slope_noleg <- p_slope + theme(legend.position = "none")
+p_intercept_noleg <- p_intercept + theme(legend.position = "none")
+
+# Combine plots and legend manually
+combined <- plot_grid(
+  p_slope_noleg, p_intercept_noleg,
+  labels = c("A", "B"),
+  ncol = 1, align = "v", label_x = 0.1
+)
+
+# Add shared legend
+plot_grid(combined, legend, rel_widths = c(1, 0.3))
+

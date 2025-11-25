@@ -9,7 +9,7 @@ This repository contains:
     2. Open the Analysis Code folder and run the CleanNorway.R file
     3. Open CleanData.CreateMainFile.R and run this file
     4. Run the DataPrep.R file
-    5. Run the Models.R file followed by the PCA.R file
+    5. Run the PCA.R file followed by the Models.R file
     6. Run Figure1.R and Figure2.R
     7. Prior to running Figure3and4_ThermalTraits.R, run the 5 ThermalTraits files
     8. Then run Figure3and4_ThermalTraits.R

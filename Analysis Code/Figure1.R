@@ -1,25 +1,34 @@
-# --- Temperature palette (kept as-is) ---
-temp_colors <- c("Soil temp"   = "#b05a3c",  # warm earthy orange
-                 "Ground temp" = "#9ab973",  # muted olive green
-                 "Air temp"    = "#648fff")  # cool blue
+# libraries
+library(factoextra)
+library(dplyr)
+library(ggrepel)
+library(ggplot2)
+library(ggpubr)
+library(cowplot)
 
-country_colors <- c("S. Africa" = "#377F6C",  # muted teal
-                    "Norway"    = "#984464")  # plum red
+# --- Temperature palette (updated names) ---
+temp_colors <- c(
+  "Soil, -6 cm" = "#b05a3c",  # warm earthy orange
+  "Soil, 0 cm"  = "#9ab973",  # muted olive green
+  "Air, 15 cm"  = "#648fff"   # cool blue
+)
+
+country_colors <- c(
+  "South Africa" = "#377F6C",  # muted teal
+  "Norway"       = "#984464"   # plum red
+)
 
 # --- Temperature plot ---
 temp.plot <- env_all_long %>%
-  filter(Variable %in% c("Soil temp", "Ground temp", "Air temp")) %>%
+  filter(Variable %in% c("Soil, -6 cm", "Soil, 0 cm", "Air, 15 cm")) %>%
   ggplot(aes(x = Elevation, y = Value,
              color = Variable,
              shape = Country)) +
   geom_point(alpha = 0.4, size = 1.5) +
-  geom_smooth(aes(linetype = Country),  # <-- added this
-              method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
-  scale_color_manual(values = temp_colors, name = "Temperature class") +
-  scale_linetype_manual(values = c("Norway" = "solid", "S. Africa" = "dashed"), 
-                        name = "Country") +
-  scale_shape_manual(values = c("Norway" = 16, "S. Africa" = 17), 
-                     name = "Country") +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
+  scale_color_manual(values = temp_colors, name = "") +
+  scale_shape_manual(values = c("Norway" = 16, "South Africa" = 17),
+                     name = "") +
   theme_classic(base_size = 14) +
   labs(x = "Elevation (m a.s.l.)", y = "Temperature (°C)") +
   theme(legend.position = "right",
@@ -31,13 +40,10 @@ moist.plot <- env_all_long %>%
   ggplot(aes(x = Elevation, y = Value,
              color = Country, shape = Country)) +
   geom_point(alpha = 0.4, size = 1.5) +
-  geom_smooth(aes(linetype = Country),  # <-- added this
-              method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
-  scale_color_manual(values = country_colors, name = "Country") +
-  scale_linetype_manual(values = c("Norway" = "solid", "S. Africa" = "dashed"), 
-                        name = "Country") +
-  scale_shape_manual(values = c("Norway" = 16, "S. Africa" = 17), 
-                     name = "Country") +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
+  scale_color_manual(values = country_colors, name = "") +
+  scale_shape_manual(values = c("Norway" = 16, "South Africa" = 17),
+                     name = "") +
   theme_classic(base_size = 14) +
   labs(x = "Elevation (m a.s.l.)", y = "Soil moisture (%)") +
   theme(legend.position = "right")
@@ -47,13 +53,10 @@ height.plot <- ggplot(raw.env.data_pca,
                       aes(x = Elevation, y = vegetation_height,
                           color = Country, shape = Country)) +
   geom_point(size = 2, alpha = 0.8) +
-  geom_smooth(aes(linetype = Country),  # <-- added this
-              method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
-  scale_color_manual(values = country_colors, name = "Country") +
-  scale_linetype_manual(values = c("Norway" = "solid", "S. Africa" = "dashed"),
-                        name = "Country") +
-  scale_shape_manual(values = c("Norway" = 16, "S. Africa" = 17),
-                     name = "Country") +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
+  scale_color_manual(values = country_colors, name = "") +
+  scale_shape_manual(values = c("Norway" = 16, "South Africa" = 17),
+                     name = "") +
   theme_classic(base_size = 14) +
   labs(x = "Elevation (m a.s.l.)", y = "Vegetation height (cm)") +
   theme(legend.position = "none")
@@ -63,17 +66,13 @@ pc.plot <- ggplot(raw.env.data_pca,
                   aes(x = Elevation, y = PC1,
                       color = Country, shape = Country)) +
   geom_point(size = 2, alpha = 0.8) +
-  geom_smooth(aes(linetype = Country),  # <-- added this
-              method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
-  scale_color_manual(values = country_colors, name = "Country") +
-  scale_linetype_manual(values = c("Norway" = "solid", "S. Africa" = "dashed"),
-                        name = "Country") +
-  scale_shape_manual(values = c("Norway" = 16, "S. Africa" = 17),
-                     name = "Country") +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
+  scale_color_manual(values = country_colors, name = "") +
+  scale_shape_manual(values = c("Norway" = 16, "South Africa" = 17),
+                     name = "") +
   theme_classic(base_size = 14) +
   labs(x = "Elevation (m a.s.l.)", y = "PC1 (dimensionless)") +
   theme(legend.position = "none")
-
 
 # --- Extract clean legends ---
 legend_country <- get_legend(
@@ -84,7 +83,7 @@ legend_country <- get_legend(
 
 legend_temp <- get_legend(
   temp.plot +
-    guides(linetype = "none", shape = "none") +  # show only color legend
+    guides(shape = "none") +  # show only color legend
     theme(legend.position = "bottom",
           legend.box = "horizontal",
           legend.title = element_text(size = 12))
@@ -134,8 +133,8 @@ summary(lm(Value ~ Elevation * Country,
            data = env_all_long %>% filter(Variable == "Soil moisture")))
 
 summary(lm(Value ~ Elevation * Country * Variable,
-           data = env_all_long %>% 
-             filter(Variable %in% c("Soil temp", "Ground temp", "Air temp"))))
+           data = env_all_long %>%
+             filter(Variable %in% c("Soil, -6 cm", "Soil, 0 cm", "Air, 15 cm"))))
 
 
 
@@ -164,7 +163,7 @@ temp.plot.pc1 <- env_all_long %>%
   geom_point(alpha = 0.4, size = 1.5) +
   geom_smooth(aes(group = Variable, color = Variable),
               method = "lm", se = TRUE, linewidth = 1) +
-  scale_color_manual(values = temp_colors, name = "Temperature class") +
+  scale_color_manual(values = temp_colors, name = "") +
   theme_classic(base_size = 14) +
   labs(x = "PC1 (dimensionless)", y = "Temperature (°C)") +
   theme(legend.position = "bottom",  # <-- Keep legend here

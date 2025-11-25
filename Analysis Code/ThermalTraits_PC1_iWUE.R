@@ -65,28 +65,36 @@ summary(mod.breadth <- gam(breadth_95 ~ s(PC1, k=3) +
 #Visualize:
 i.School_Topt_Plot <- ggplot(ThermTraits.dat.i, aes(x = PC1, y = T_opt_school, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) +
   labs(x = "PC1 (dimensionless)",
        y = expression(T[opt]~"(°C)"),
        color = "Species",
        title=expression(iWUE ~ "(" * mu * mol ~ mol^-1 * ")"))
 i.Ea_Plot <- ggplot(ThermTraits.dat.i, aes(x = PC1, y = E, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) +
   labs(x = "PC1 (dimensionless)",
        y = expression(E[a]~"(eV)"),
        color = "Species")
 i.Ed_Plot <- ggplot(ThermTraits.dat.i, aes(x = PC1, y = E_D, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) +
   labs(x = "PC1 (dimensionless)",
        y = expression(E[d]~"(eV)"),
        color = "Species")
 i.breadth_Plot <- ggplot(ThermTraits.dat.i, aes(x = PC1, y = breadth_95, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
-  theme_classic(base_size = 14) +
+  scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
+  theme_classic(base_size = 13) +
+  theme(legend.text = element_markdown()) +
   labs(x = "PC1 (dimensionless)",
-       y = "breadth (°C)",
+       y = expression(Theta~"(°C)"), 
        color = "Species")
 
-iWUE.Therm.plot <- ggarrange(i.School_Topt_Plot, i.breadth_Plot, i.Ea_Plot, i.Ed_Plot, nrow=2, ncol=2, common.legend = TRUE, labels = c("A","B","C","D"),legend="right")
+#iWUE.Therm.plot <- ggarrange(i.School_Topt_Plot, i.breadth_Plot, i.Ea_Plot, i.Ed_Plot, nrow=2, ncol=2, common.legend = TRUE, labels = c("A","B","C","D"),legend="right")

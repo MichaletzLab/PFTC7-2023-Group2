@@ -13,7 +13,7 @@ formatted_rsq1 <- sprintf("r² = %.3f", rsq)
                 formula = y ~ s(x, bs = 'ts', k = 5),
                 color = "#cf0000") + 
     labs(x = "Leaf temperature (°C)",
-         y = "VPD (kPa)") + 
+         y = "Vapor pressure deficit (kPa)") + 
     theme_classic() +
     annotate("text", x = 20, y = Inf, label = formatted_rsq1, 
              hjust = 1.1, vjust = 1.1, size = 5, fontface = "italic"))

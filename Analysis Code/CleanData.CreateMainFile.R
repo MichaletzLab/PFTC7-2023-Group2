@@ -4,6 +4,7 @@
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
+library(ggpubr)
 library(stringr)
 library(nls.multstart)
 library(nlstools)

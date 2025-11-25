@@ -54,11 +54,11 @@ find_opt_Tleaf <- function(pred_df) {
 plot_top_PC1_sites <- function(pred_df, raw_df, response_name, ymax = NULL){
   y_lab <- switch(
     response_name,
-    "A"    = expression(A~"(" * mu * mol ~ m^-2 ~ s^-1 * ")"),
-    "E"    = expression(E~"(" * mol ~ m^-2 ~ s^-1 * ")"),
-    "gsw"  = expression(g[sw]~"(" * mol ~ m^-2 ~ s^-1 * ")"),
-    "iWUE" = expression(iWUE~"(" * mu * mol ~ mol^-1 * ")"),
-    "WUE" = expression(WUE~"(" * mu * mol ~ mol^-1 * ")"),
+    "A"    = expression(italic(A)~"(" * mu * mol ~ m^-2 ~ s^-1 * ")"),
+    "E"    = expression(italic(E)~"(" * mol ~ m^-2 ~ s^-1 * ")"),
+    "gsw"  = expression(italic(g)[sw]~"(" * mol ~ m^-2 ~ s^-1 * ")"),
+    "iWUE" = expression(italic(iWUE)~"(" * mu * mol ~ mol^-1 * ")"),
+    "WUE"  = expression(italic(WUE)~"(" * mu * mol ~ mol^-1 * ")"),
     response_name
   )
   
@@ -81,8 +81,8 @@ plot_top_PC1_sites <- function(pred_df, raw_df, response_name, ymax = NULL){
     #           aes(xintercept = Tleaf, color = PC1_group),
     #           linetype = "dashed", linewidth = 0.8) +
     scale_color_viridis_d(option = "turbo", name = "PC1 Level (Site)") +
-    theme_classic() +
-    labs(x = expression(Leaf~Temperature~(degree*C)),
+    theme_classic(base_size = 24) +
+    labs(x = expression(Leaf~temperature~(degree*C)),
          y = y_lab)
 }
 
@@ -124,13 +124,13 @@ finite_diff_deriv_overall <- function(model, n = 200) {
 }
 
 plot_deriv_overall <- function(deriv_df, response_name){
-  y_lab <- bquote(frac(d~.(response_name), d~T[leaf]))
+  y_lab <- bquote(frac(d*italic(.(response_name)), d*italic(T)[leaf]))
   
   ggplot(deriv_df, aes(x = Tleaf, y = deriv)) +
     geom_line(color = "black", linewidth = 1.2) +
     geom_hline(yintercept = 0, linetype = "dashed") +
-    theme_classic() +
-    labs(x = expression(Leaf~Temperature~(degree*C)), y = y_lab)
+    theme_classic(base_size = 24) +
+    labs(x = expression(Leaf~temperature~(degree*C)), y = y_lab)
 }
 
 # --- Compute derivatives for each response ---
@@ -159,4 +159,4 @@ final_plot <- ggarrange(
   ncol = 1, nrow = 2, heights = c(2, 1)
 )
 
-final_plot  # Save as 1500 x 1200
+final_plot  # Save as 1600 x 1200

@@ -1,3 +1,5 @@
+### --- Prediction helpers --- ###
+
 make_pred_full <- function(model, response, n = 200) {
   
   placeholder_species <- model$model$Species[1]
@@ -14,21 +16,21 @@ make_pred_full <- function(model, response, n = 200) {
     curveID           = placeholder_curveID
   )
   
-  # Predict with SEs
   preds <- predict(model, newdata = newdat, type = "response", se.fit = TRUE, exclude = "s(curveID)")
   
-  newdat$fit <- preds$fit
-  newdat$se  <- preds$se.fit
+  newdat$fit   <- preds$fit
+  newdat$se    <- preds$se.fit
   newdat$upper <- newdat$fit + 1.96 * newdat$se
   newdat$lower <- newdat$fit - 1.96 * newdat$se
   newdat$response <- response
   newdat
 }
 
+
 make_pred_full_PC <- function(model, response, n = 200) {
   
   placeholder_species <- model$model$Species[1]
-  placeholder_curveID <- 9  # omit random effect for population-level prediction
+  placeholder_curveID <- 9
   
   newdat <- data.frame(
     Tleaf = seq(min(model$model$Tleaf), max(model$model$Tleaf), length.out = n),
@@ -37,15 +39,14 @@ make_pred_full_PC <- function(model, response, n = 200) {
     PC3   = mean(model$model$PC3),
     PC4   = mean(model$model$PC4),
     PC5   = mean(model$model$PC5),
-    Species   = factor(placeholder_species, levels = levels(model$model$Species)),
-    curveID   = placeholder_curveID
+    Species = factor(placeholder_species, levels = levels(model$model$Species)),
+    curveID = placeholder_curveID
   )
   
-  # Predict with SEs
   preds <- predict(model, newdata = newdat, type = "response", se.fit = TRUE, exclude = "s(curveID)")
   
-  newdat$fit <- preds$fit
-  newdat$se  <- preds$se.fit
+  newdat$fit   <- preds$fit
+  newdat$se    <- preds$se.fit
   newdat$upper <- newdat$fit + 1.96 * newdat$se
   newdat$lower <- newdat$fit - 1.96 * newdat$se
   newdat$response <- response
@@ -53,22 +54,53 @@ make_pred_full_PC <- function(model, response, n = 200) {
 }
 
 
-pred_A   <- make_pred_full(gam_mod_full_environ_A, "A")
-pred_E   <- make_pred_full(gam_mod_full_environ_E, "E")
-pred_gsw <- make_pred_full(gam_mod_full_environ_gsw, "gsw")
-pred_iW  <- make_pred_full(gam_mod_full_environ_iWUE, "iWUE")
-pred_eW <- make_pred_full(gam_mod_full_environ_WUE, "WUE")
+make_pred_PC1 <- function(model, response, n = 200) {
+  
+  placeholder_species <- model$model$Species[1]
+  placeholder_curveID <- 9
+  
+  newdat <- data.frame(
+    Tleaf = seq(min(model$model$Tleaf), max(model$model$Tleaf), length.out = n),
+    PC1   = mean(model$model$PC1),
+    Species = factor(placeholder_species, levels = levels(model$model$Species)),
+    curveID = placeholder_curveID
+  )
+  
+  preds <- predict(model, newdata = newdat, type = "response", se.fit = TRUE, exclude = "s(curveID)")
+  
+  newdat$fit   <- preds$fit
+  newdat$se    <- preds$se.fit
+  newdat$upper <- newdat$fit + 1.96 * newdat$se
+  newdat$lower <- newdat$fit - 1.96 * newdat$se
+  newdat$response <- response
+  newdat
+}
+
+
+### --- Generate prediction data --- ###
+
+pred_A    <- make_pred_full(gam_mod_full_environ_A, "A")
+pred_E    <- make_pred_full(gam_mod_full_environ_E, "E")
+pred_gsw  <- make_pred_full(gam_mod_full_environ_gsw, "gsw")
+pred_iW   <- make_pred_full(gam_mod_full_environ_iWUE, "iWUE")
+pred_eW   <- make_pred_full(gam_mod_full_environ_WUE, "WUE")
 
 pred_A_pc   <- make_pred_full_PC(gam_mod_full_PC_A, "A")
-pred_E_pc  <- make_pred_full_PC(gam_mod_full_PC_E, "E")
+pred_E_pc   <- make_pred_full_PC(gam_mod_full_PC_E, "E")
 pred_gsw_pc <- make_pred_full_PC(gam_mod_full_PC_gsw, "gsw")
 pred_iW_pc  <- make_pred_full_PC(gam_mod_full_PC_iWUE, "iWUE")
-pred_eW_pc <- make_pred_full_PC(gam_mod_full_PC_WUE, "WUE")
+pred_eW_pc  <- make_pred_full_PC(gam_mod_full_PC_WUE, "WUE")
+
+pred_A_pc1   <- make_pred_PC1(gam_mod_A_PC1, "A")
+pred_E_pc1   <- make_pred_PC1(gam_mod_E_PC1, "E")
+pred_gsw_pc1 <- make_pred_PC1(gam_mod_gsw_PC1, "gsw")
+pred_iW_pc1  <- make_pred_PC1(gam_mod_iWUE_PC1, "iWUE")
+pred_eW_pc1  <- make_pred_PC1(gam_mod_WUE_PC1, "WUE")
 
 
+### --- Plot function --- ###
 
-
-plot_environ_compare <- function(pred_env, pred_pc, raw_df, response_name, ymax = NULL) {
+plot_environ_compare <- function(pred_env, pred_pc, pred_pc1, raw_df, response_name, ymax = NULL) {
   
   y_lab <- switch(
     response_name,
@@ -84,6 +116,7 @@ plot_environ_compare <- function(pred_env, pred_pc, raw_df, response_name, ymax 
     raw_df   <- raw_df   %>% filter(.data[[response_name]] < ymax)
     pred_env <- pred_env %>% filter(fit < ymax)
     pred_pc  <- pred_pc  %>% filter(fit < ymax)
+    pred_pc1 <- pred_pc1 %>% filter(fit < ymax)
   }
   
   ggplot() +
@@ -92,13 +125,16 @@ plot_environ_compare <- function(pred_env, pred_pc, raw_df, response_name, ymax 
                alpha = 0.005, size = 1) +
     # Confidence ribbons
     geom_ribbon(data = pred_env, aes(x = Tleaf, ymin = lower, ymax = upper),
-                fill = "blue", alpha = 0.4) +
+                fill = "blue", alpha = 0.3) +
     geom_ribbon(data = pred_pc, aes(x = Tleaf, ymin = lower, ymax = upper),
-                fill = "red", alpha = 0.4) +
+                fill = "red", alpha = 0.3) +
+    geom_ribbon(data = pred_pc1, aes(x = Tleaf, ymin = lower, ymax = upper),
+                fill = "green", alpha = 0.3) +
     # Fitted lines
     geom_line(data = pred_env, aes(x = Tleaf, y = fit, color = "Full Env"), linewidth = 1.2) +
-    geom_line(data = pred_pc,  aes(x = Tleaf, y = fit, color = "PC GAM"), linewidth = 1.2, linetype = "dashed") +
-    scale_color_manual(values = c("Full Env" = "blue", "PC GAM" = "red")) +
+    geom_line(data = pred_pc,  aes(x = Tleaf, y = fit, color = "Full PC"), linewidth = 1.2, linetype = "dashed") +
+    geom_line(data = pred_pc1, aes(x = Tleaf, y = fit, color = "PC1-only"), linewidth = 1.2, linetype = "dotdash") +
+    scale_color_manual(values = c("Full Env" = "blue", "Full PC" = "red", "PC1-only" = "green")) +
     theme_classic() +
     labs(x = expression(Leaf~Temperature~(degree*C)),
          y = y_lab,
@@ -106,12 +142,16 @@ plot_environ_compare <- function(pred_env, pred_pc, raw_df, response_name, ymax 
 }
 
 
-# --- Create top-row plots ---
-pA  <- plot_environ_compare(pred_A,  pred_A_pc,  raw.env.data_pca, "A")
-pE  <- plot_environ_compare(pred_E,  pred_E_pc,  raw.env.data_pca, "E")
-pG  <- plot_environ_compare(pred_gsw, pred_gsw_pc, raw.env.data_pca, "gsw")
-pI  <- plot_environ_compare(pred_iW, pred_iW_pc, raw.env.data_pca, "iWUE", ymax = 300)
-pEw <- plot_environ_compare(pred_eW, pred_eW_pc, raw.env.data_pca, "WUE", ymax = 10000)
+### --- Make plots --- ###
+
+pA  <- plot_environ_compare(pred_A,  pred_A_pc,  pred_A_pc1,  raw.env.data_pca, "A")
+pE  <- plot_environ_compare(pred_E,  pred_E_pc,  pred_E_pc1,  raw.env.data_pca, "E")
+pG  <- plot_environ_compare(pred_gsw, pred_gsw_pc, pred_gsw_pc1, raw.env.data_pca, "gsw")
+pI  <- plot_environ_compare(pred_iW, pred_iW_pc, pred_iW_pc1, raw.env.data_pca, "iWUE", ymax = 300)
+pEw <- plot_environ_compare(pred_eW, pred_eW_pc, pred_eW_pc1, raw.env.data_pca, "WUE", ymax = 10000)
 
 
-ggarrange(pA, pE, pG, pEw, pI, labels = c("A","B","C","D","E"))
+### --- Arrange plots --- ###
+ggarrange(pA, pE, pG, pEw, pI,
+          labels = c("A","B","C","D","E"),
+          common.legend = TRUE, legend = "right")

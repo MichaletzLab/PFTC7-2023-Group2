@@ -278,7 +278,7 @@ raw.env.data <- raw.env.data %>%
          Elevation_cat,
          mean_T2, mean_T2_cat,
          mean_moist_pct, mean_moist_pct_cat, VPDleaf, Ca) %>%
-  mutate(Country = if_else(Elevation < 1500, "Norway", "S. Africa"))
+  mutate(Country = if_else(Elevation < 1500, "Norway", "South Africa"))
 ## Add dummy for the species:
 raw.env.data <- raw.env.data %>%
   mutate(Species = factor(Species))
@@ -311,7 +311,7 @@ lowest_species
 
 # Prep for environmental plot
 tomst_long <- tomst %>%
-  mutate(Country = "S. Africa") %>%
+  mutate(Country = "South Africa") %>%
   select(Country, Elevation, datetime, T1, T2, AirTemp, moist_vol) %>%
   pivot_longer(
     cols = c(T1, T2, AirTemp, moist_vol),
@@ -364,4 +364,89 @@ norway_long <- bind_rows(norway_temp_long, norway_moist_long)
 
 env_all_long <- bind_rows(tomst_long, norway_long) %>%
   filter(!is.na(Value))
+env_all_long <- env_all_long %>%
+  mutate(
+    Variable = dplyr::recode(
+      Variable,
+      "Soil temp"   = "Soil, -6 cm",
+      "Ground temp" = "Soil, 0 cm",
+      "Air temp"    = "Air, 15 cm"
+    ),
+    Country = dplyr::recode(Country,
+                            "S. Africa" = "South Africa"
+    )
+  )
+
+# ---------------------------------------------------------------
+# Add vegetation height summary
+# ---------------------------------------------------------------
+veg.height.SA <- read.csv("data/ii_PFTC7_clean_elevationgradient_community_structure_2023.csv")
+veg.height.N <- read.csv("data/PFTC6_ElevationalGradient_vegetation_height_2019_2022.csv")
+veg_summary <- veg.height.SA %>%
+  rename(Elevation = elevation_m_asl) %>%
+  filter(variable == "vegetation_height") %>%  # ✅ fixed name
+  group_by(Elevation) %>%
+  summarise(
+    vegetation_height = mean(value, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+#Norway:
+elev_map <- c(
+  Vik = 469,
+  Hog = 700,
+  Joa = 920,
+  Lia = 1290
+)
+
+veg_summary_N <- veg.height.N %>%
+  mutate(site_prefix = substr(siteID, 1, 3)) %>%
+  mutate(Elevation = elev_map[site_prefix]) %>%
+  group_by(Elevation) %>%
+  summarise(vegetation_height = mean(vegetation_height, na.rm = TRUE)) %>%
+  arrange(Elevation)
+
+veg_summary_N
+
+combined_summary <- bind_rows(veg_summary, veg_summary_N)
+# Join veg height into your environmental data
+raw.env.data <- raw.env.data %>%
+  left_join(combined_summary, by = "Elevation")%>%
+  mutate(WUE = A / E)
+
+
+## Summarize stuff for text:
+raw.env.data %>%
+  group_by(Species) %>%
+  summarise(
+    n_curveIDs = n_distinct(curveID))
+raw.env.data %>%
+  group_by(Species) %>%
+  summarise(n_curveIDs = n_distinct(curveID), .groups = "drop") %>%
+  summarise(
+    median_curveIDs = median(n_curveIDs),
+    mean_curveIDs   = mean(n_curveIDs),
+    min_curveIDs    = min(n_curveIDs),
+    max_curveIDs    = max(n_curveIDs),
+    n_species       = n()
+  )
+
+summary(raw.env.data$VPDleaf)
+
+
+curve_row_counts <- raw.env.data %>%
+  group_by(curveID) %>%
+  summarise(n_rows = n(), .groups = "drop")
+
+curve_row_counts
+
+# Get overall mean number of rows per curveID
+curve_row_counts %>%
+  summarise(
+    mean_rows_per_curveID = mean(n_rows),
+    median_rows_per_curveID = median(n_rows),
+    min_rows = min(n_rows),
+    max_rows = max(n_rows),
+    n_curveIDs = n()
+  )
 
