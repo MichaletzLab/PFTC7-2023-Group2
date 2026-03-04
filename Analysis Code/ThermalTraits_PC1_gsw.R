@@ -40,6 +40,10 @@ PC1_df <- raw.env.data_pca %>%
   summarise(PC1 = mean(PC1, na.rm = TRUE))
 
 ThermTraits.dat.g <- left_join(parameter_dat.g, PC1_df, by="curveID")
+ThermTraits.dat.g <- ThermTraits.dat.g %>%
+  mutate(Species = if_else(Species == "Senecio tall",
+                           "Senecio cf scitus",
+                           Species))
 #Run a gam with y=thermal traits, x=PC1
 summary(mod.T_opt_sch <- gam(T_opt_school ~ s(PC1, k=3) + ###
                                Species,

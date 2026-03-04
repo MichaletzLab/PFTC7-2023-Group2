@@ -40,6 +40,10 @@ PC1_df <- raw.env.data_pca %>%
   summarise(PC1 = mean(PC1, na.rm = TRUE))
 
 ThermTraits.dat.e <- left_join(parameter_dat.e, PC1_df, by="curveID")
+ThermTraits.dat.e <- ThermTraits.dat.e %>%
+  mutate(Species = if_else(Species == "Senecio tall",
+                           "Senecio cf scitus",
+                           Species))
 #Run a gam with y=thermal traits, x=PC1
 summary(mod.T_opt_sch <- gam(T_opt_school ~ s(PC1, k=3) + ###
                                Species,
@@ -103,9 +107,12 @@ e.breadth_Plot <- ggplot(ThermTraits.dat.e, aes(x = PC1, y = breadth_95, color =
 
 
 # also run a linear mixed effects for eWUE
-
+library(lme4)
+library(lmerTest)
 # --- Fit model
-mod <- lmer(eWUE ~ Tleaf * PC1 + (1 + Tleaf | Species/curveID), data = raw.env.data_pca)
+
+mod <- lmer(A/E ~ Tleaf * PC1 + (1 + Tleaf || Species/curveID),
+            data = raw.env.data_pca)
 summary(mod)
 
 # --- Extract fixed effects
@@ -180,3 +187,4 @@ peW_intercept <- ggplot(intercept_data, aes(x = PC1, y = intercept, color = Spec
   scale_color_discrete(labels = function(x) paste0("<i>", x, "</i>")) +
   theme_classic(base_size = 13) +
   theme(legend.text = element_markdown())
+

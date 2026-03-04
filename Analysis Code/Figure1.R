@@ -8,19 +8,19 @@ library(cowplot)
 
 # --- Temperature palette (updated names) ---
 temp_colors <- c(
-  "Soil, -6 cm" = "#b05a3c",  # warm earthy orange
-  "Soil, 0 cm"  = "#9ab973",  # muted olive green
-  "Air, 15 cm"  = "#648fff"   # cool blue
+  "Soil, -8 cm" = "#D55E00",  # vermillion/orange
+  "Surface, 0 cm"  = "#009E73",  # bluish green
+  "Air, +15 cm" = "#0072B2"   # dark blue
 )
 
 country_colors <- c(
-  "South Africa" = "#377F6C",  # muted teal
-  "Norway"       = "#984464"   # plum red
+  "South Africa" = "#E69F00",  # amber/gold
+  "Norway"       = "#0072B2"   # dark blue
 )
 
 # --- Temperature plot ---
 temp.plot <- env_all_long %>%
-  filter(Variable %in% c("Soil, -6 cm", "Soil, 0 cm", "Air, 15 cm")) %>%
+  filter(Variable %in% c("Soil, -8 cm", "Surface, 0 cm", "Air, +15 cm")) %>%
   ggplot(aes(x = Elevation, y = Value,
              color = Variable,
              shape = Country)) +
@@ -45,7 +45,7 @@ moist.plot <- env_all_long %>%
   scale_shape_manual(values = c("Norway" = 16, "South Africa" = 17),
                      name = "") +
   theme_classic(base_size = 14) +
-  labs(x = "Elevation (m a.s.l.)", y = "Soil moisture (%)") +
+  labs(x = "Elevation (m a.s.l.)", y = "VWC (%)") +
   theme(legend.position = "right")
 
 # --- Vegetation height vs. Elevation ---
@@ -101,7 +101,7 @@ plot.4way <- ggarrange(
   height.plot_noleg, pc.plot_noleg,
   nrow = 2, ncol = 2,
   labels = c("A", "B", "C", "D"),
-  label.x = 0.11,   # move letters slightly right
+  label.x = 0.05,   # move letters slightly right
   label.y = 0.98,
   font.label = list(size = 14, face = "bold")
 )
@@ -110,7 +110,7 @@ plot.4way <- ggarrange(
 final_plot <- plot_grid(
   plot.4way, pca_plot,
   nrow = 1, rel_widths = c(1.3, 1),
-  labels = c("", "E"), label_x = 0.05
+  labels = c("", "E"), label_x = 0.01
 )
 
 # --- Add separate legends (non-overlapping) ---
@@ -122,7 +122,16 @@ final_with_legends <- plot_grid(
   rel_heights = c(1, 0.08, 0.08)
 )
 
-final_with_legends # 990 x 550
+#final_with_legends # 990 x 550
+ggsave(
+  filename = "Figure1.png",
+  plot = final_with_legends,
+  width  = 15,
+  height = 8,
+  units  = "in",
+  dpi    = 300,
+  limitsize = FALSE
+)
 
 ###########################################
 ## P-values for text: ####
@@ -134,7 +143,7 @@ summary(lm(Value ~ Elevation * Country,
 
 summary(lm(Value ~ Elevation * Country * Variable,
            data = env_all_long %>%
-             filter(Variable %in% c("Soil, -6 cm", "Soil, 0 cm", "Air, 15 cm"))))
+             filter(Variable %in% c("Soil, -8 cm", "Surface, 0 cm", "Air, 15 cm"))))
 
 
 
@@ -176,7 +185,7 @@ moist.plot.pc1 <- env_all_long %>%
   geom_point(alpha = 0.4, size = 1.5) +
   geom_smooth(method = "lm", se = TRUE, linewidth = 1, color = "black") +
   theme_classic(base_size = 14) +
-  labs(x = "PC1 (dimensionless)", y = "Soil moisture (%)") +
+  labs(x = "PC1 (dimensionless)", y = "VWC (%)") +
   theme(legend.position = "none")
 
 # --- Vegetation height plot ---

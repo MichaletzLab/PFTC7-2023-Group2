@@ -26,7 +26,7 @@ fit_schoolfieldONLY_gam <- function(data, y_var, x_var, T_ref = 25, start_params
     E <- params[2]
     E_D <- params[3]
     T_opt <- params[4]
-    data$schoolfield_base <- schoolfield_basis(data, x_var, J_ref, E, E_D, T_opt, T_ref)
+    data$schoolfield_basis <- schoolfield_basis(data, x_var, J_ref, E, E_D, T_opt)
     gam_fit <- gam(as.formula(paste(y_var, "~ schoolfield_base")), data = data, method = "REML")
     return(-logLik(gam_fit))
   }

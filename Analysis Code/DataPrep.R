@@ -319,7 +319,7 @@ tomst_long <- tomst %>%
     values_to = "Value"
   ) %>%
   mutate(
-    Variable = recode(Variable,
+    Variable = dplyr::recode(Variable,
                       "T1" = "Soil temp",
                       "T2" = "Ground temp",
                       "AirTemp" = "Air temp",
@@ -368,9 +368,9 @@ env_all_long <- env_all_long %>%
   mutate(
     Variable = dplyr::recode(
       Variable,
-      "Soil temp"   = "Soil, -6 cm",
-      "Ground temp" = "Soil, 0 cm",
-      "Air temp"    = "Air, 15 cm"
+      "Soil temp"   = "Soil, -8 cm",
+      "Ground temp" = "Surface, 0 cm",
+      "Air temp"    = "Air, +15 cm"
     ),
     Country = dplyr::recode(Country,
                             "S. Africa" = "South Africa"
@@ -449,4 +449,5 @@ curve_row_counts %>%
     max_rows = max(n_rows),
     n_curveIDs = n()
   )
+
 

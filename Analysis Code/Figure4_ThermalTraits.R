@@ -1,4 +1,6 @@
 #First run all four ThermalTraits_PC1 scripts
+library(cowplot)
+
 legend_plot <- School_Topt_Plot +
   theme(
     legend.position = "right",

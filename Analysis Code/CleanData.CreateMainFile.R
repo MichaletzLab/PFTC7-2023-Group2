@@ -33,7 +33,7 @@ source("code/fit_mod_schoolfield_gsw.R")
 source("code/fit_mod_schoolfield_iWUE.R")
 source("code/fit_mod_schoolfield_eWUE.R")
 
-setwd("../data/FasterLicor") ##Right now these are actually on desktop
+setwd("data/FasterLicorSA") ##Right now these are actually on desktop
 
 # load list of file paths for Licor data
 at.files = list.files(full.names=T)
@@ -107,6 +107,11 @@ heli_naming_system <- read_excel("data/New Helichrysum naming system.xlsx")
 FT_new_name_system <- new_heli_naming_system(data = FT_step_1, naming_system = heli_naming_system, data_species_column = "species")
 #comm_new_name_system <- new_heli_naming_system(data = comm, naming_system = heli_naming_system, data_species_column = "species")
 
+FT_new_name_system <-FT_new_name_system%>%
+  mutate(species = if_else(species == "senecio_tall",
+                           "senecio_cf_scitus",
+                           species))
+  
 write.csv(FT_new_name_system, "data/PFTC7_SA_clean_traits_08May2024.csv") # write a new file with the finalized data
 #write.csv(comm_new_name_system, "PFTC7_SA_clean_community_08May2024.csv")
 
@@ -204,6 +209,7 @@ results_meta_discard.hooks = results_meta_discard.hooks%>%
   mutate(Elevation = coalesce(Elevation.x, Elevation.y))
 write.csv(results_meta_discard.hooks, 'weibull.discard.hooks.SANW.csv', row.names = F)
 
+
 #Now fit the Sharpe-Schoolfield model to A:
 Sfield.results.discard.hooks =fit_mod_schoolfield(at.subset3 %>% select(Tleaf, A, curveID), x = "Tleaf", y = "A", T_ref = 25)
 Sfield.results.discard.hooks$curveID = as.numeric(Sfield.results.discard.hooks$curveID)
@@ -212,7 +218,7 @@ Sfield.results_meta_discard.hooks = left_join(Sfield.results_meta_discard.hooks,
 Sfield.results_meta_discard.hooks = Sfield.results_meta_discard.hooks%>%
   mutate(country = case_when(curveID > 1000~"Norway",curveID < 1000~"SAfrica"))
 write.csv(Sfield.results_meta_discard.hooks, 'schoolfield.discard.hooks.SANW.csv', row.names = F)
-
+#Sfield.results_meta_discard.hooks <- read.csv("schoolfield.discard.hooks.SANW.csv")
 
 #Fit the Weibull Model to gsw:
 gsw.results.discard.hooks = fit_weibull.gsw_breadth(at.subset3) #also if this fails try the grDevices thing
@@ -233,6 +239,7 @@ gsw.Sfield.results_meta_discard.hooks = left_join(gsw.Sfield.results_meta_discar
 gsw.Sfield.results_meta_discard.hooks = gsw.Sfield.results_meta_discard.hooks%>%
   mutate(country = case_when(curveID > 1000~"Norway",curveID < 1000~"SAfrica"))
 write.csv(gsw.Sfield.results_meta_discard.hooks, 'schoolfield.gsw.discard.hooks.SANW.csv', row.names = F)
+#gsw.Sfield.results_meta_discard.hooks <- read.csv("schoolfield.gsw.discard.hooks.SANW.csv")
 
 #Now fit the Sharpe-Schoolfield model to iWUE:
 iWUE.Sfield.results.discard.hooks =fit_mod_schoolfield_iWUE(at.subset3 %>% select(Tleaf, iWUE, curveID), x = "Tleaf", y = "iWUE", T_ref = 25)
@@ -242,6 +249,7 @@ iWUE.Sfield.results_meta_discard.hooks = left_join(iWUE.Sfield.results_meta_disc
 iWUE.Sfield.results_meta_discard.hooks = iWUE.Sfield.results_meta_discard.hooks%>%
   mutate(country = case_when(curveID > 1000~"Norway",curveID < 1000~"SAfrica"))
 write.csv(iWUE.Sfield.results_meta_discard.hooks, 'schoolfield.iWUE.discard.hooks.SANW.csv', row.names = F)
+#iWUE.Sfield.results_meta_discard.hooks <- read.csv("schoolfield.iWUE.discard.hooks.SANW.csv")
 
 #Now fit the Sharpe-Schoolfield model to eWUE:
 eWUE.Sfield.results.discard.hooks =fit_mod_schoolfield_eWUE(at.subset3 %>% select(Tleaf, eWUE, curveID), x = "Tleaf", y = "eWUE", T_ref = 25)
@@ -251,6 +259,7 @@ eWUE.Sfield.results_meta_discard.hooks = left_join(eWUE.Sfield.results_meta_disc
 eWUE.Sfield.results_meta_discard.hooks = eWUE.Sfield.results_meta_discard.hooks%>%
   mutate(country = case_when(curveID > 1000~"Norway",curveID < 1000~"SAfrica"))
 write.csv(eWUE.Sfield.results_meta_discard.hooks, 'schoolfield.eWUE.discard.hooks.SANW.csv', row.names = F)
+#eWUE.Sfield.results_meta_discard.hooks <- read.csv("schoolfield.eWUE.discard.hooks.SANW.csv")
 
 
 #Discarded code:

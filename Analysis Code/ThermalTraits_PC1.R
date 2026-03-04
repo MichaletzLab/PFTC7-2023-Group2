@@ -52,6 +52,10 @@ PC1_df <- raw.env.data_pca %>%
   summarise(PC1 = mean(PC1, na.rm = TRUE))
 
 ThermTraits.dat <- left_join(parameter_dat, PC1_df, by="curveID")
+ThermTraits.dat <- ThermTraits.dat %>%
+  mutate(Species = if_else(Species == "Senecio tall",
+                           "Senecio cf scitus",
+                           Species))
 #Run a gam with y=thermal traits, x=PC1
 summary(mod.T_opt_sch <- gam(T_opt_school ~ s(PC1, k=3) + ###
                        Species,
@@ -81,7 +85,7 @@ summary(mod.getbreadth <- gam(getbreadth_90 ~ s(PC1, k=3) + ###
   #the error terms that I have stored (SE). I think this will overstate our 
   #confidence though since the error is understated which means that since  
   #our results are insignificant this is OK.
-
+library(ggtext)
 #Visualize:
 School_Topt_Plot <- ggplot(ThermTraits.dat, aes(x = PC1, y = T_opt_school, color = Species)) +
   geom_point(size = 2, alpha = 0.8) +
@@ -118,3 +122,4 @@ breadth_Plot <- ggplot(ThermTraits.dat, aes(x = PC1, y = breadth_95, color = Spe
        color = "Species")
 
 #A.Therm.plot <- ggarrange(School_Topt_Plot, breadth_Plot, Ea_Plot, Ed_Plot, nrow=2, ncol=2, common.legend = TRUE, labels = c("A","B","C","D"),legend="right")
+

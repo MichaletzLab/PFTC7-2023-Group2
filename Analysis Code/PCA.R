@@ -35,7 +35,7 @@ loadings <- as.data.frame(pca_res$rotation) %>%
     Variable,
     "mean_moist_pct"    = "Soil moisture",
     "mean_T1"   = "Soil, -6 cm",
-    "mean_T2" = "Soil, 0 cm",
+    "mean_T2" = "Surface, 0 cm",
     "mean_air"    = "Air, 15 cm",
     "vegetation_height" = "VegHeight"
   ))
@@ -81,4 +81,7 @@ pc_scores <- as.data.frame(pca_res$x)
 
 raw.env.data_pca <- raw.env.data %>%
   bind_cols(pc_scores)
-
+raw.env.data_pca <- raw.env.data_pca %>%
+  mutate(Species = if_else(Species == "senecio_cf_scitus",
+                           "Senecio cf scitus",
+                           Species))

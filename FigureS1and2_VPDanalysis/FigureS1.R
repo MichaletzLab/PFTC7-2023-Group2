@@ -3,7 +3,7 @@ model.vpd.t <- gam(vpdl ~ s(tleaf, bs = 'ts', k = 5), data = dat)
 
 # Extract the R-squared value
 rsq <- summary(model.vpd.t)$r.sq
-formatted_rsq1 <- sprintf("r² = %.3f", rsq)
+formatted_rsq1 <- sprintf("r² = %.2f", rsq)
 
 # Create the plot
 (p_out <- dat %>% 

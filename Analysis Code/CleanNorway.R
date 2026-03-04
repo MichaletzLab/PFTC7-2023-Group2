@@ -22,7 +22,7 @@ source("code/Spname_fixes.R")
 source("code/fit_mod_schoolfield.R")
 source("code/fit_weibull_breadth.R")
 
-setwd("../data/FasterLicorNorway")
+setwd("data/FasterLicorNorway")
 
 # Load list of file paths for Licor data
 at.files <- list.files(full.names = TRUE)

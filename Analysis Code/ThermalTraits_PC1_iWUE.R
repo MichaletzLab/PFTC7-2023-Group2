@@ -40,6 +40,10 @@ PC1_df <- raw.env.data_pca %>%
   summarise(PC1 = mean(PC1, na.rm = TRUE))
 
 ThermTraits.dat.i <- left_join(parameter_dat.i, PC1_df, by="curveID")
+ThermTraits.dat.i <- ThermTraits.dat.i %>%
+  mutate(Species = if_else(Species == "Senecio tall",
+                           "Senecio cf scitus",
+                           Species))
 #Run a gam with y=thermal traits, x=PC1
 summary(mod.T_opt_sch <- gam(T_opt_school ~ s(PC1, k=3) + ###
                                Species,
@@ -98,3 +102,4 @@ i.breadth_Plot <- ggplot(ThermTraits.dat.i, aes(x = PC1, y = breadth_95, color =
        color = "Species")
 
 #iWUE.Therm.plot <- ggarrange(i.School_Topt_Plot, i.breadth_Plot, i.Ea_Plot, i.Ed_Plot, nrow=2, ncol=2, common.legend = TRUE, labels = c("A","B","C","D"),legend="right")
+

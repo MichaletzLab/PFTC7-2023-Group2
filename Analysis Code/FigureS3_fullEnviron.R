@@ -3,7 +3,7 @@
 make_pred_full <- function(model, response, n = 200) {
   
   placeholder_species <- model$model$Species[1]
-  placeholder_curveID <- 9  # omit random effect for population-level prediction
+  placeholder_curveID <- model$model$curveID[1]
   
   newdat <- data.frame(
     Tleaf = seq(min(model$model$Tleaf), max(model$model$Tleaf), length.out = n),
@@ -12,14 +12,24 @@ make_pred_full <- function(model, response, n = 200) {
     mean_T2           = mean(model$model$mean_T2),
     mean_air          = mean(model$model$mean_air),
     vegetation_height = mean(model$model$vegetation_height),
-    Species           = factor(placeholder_species, levels = levels(model$model$Species)),
+    Species = placeholder_species,
     curveID           = placeholder_curveID
   )
   
-  preds <- predict(model, newdata = newdat, type = "response", se.fit = TRUE, exclude = "s(curveID)")
+  X <- predict(model, newdata = newdat, type = "lpmatrix")
+  coefs <- coef(model)
+  Vb <- vcov(model)
   
-  newdat$fit   <- preds$fit
-  newdat$se    <- preds$se.fit
+  species_cols <- grep("^Species", colnames(X))
+  if (length(species_cols) > 0)
+    X[, species_cols] <- rowMeans(X[, species_cols, drop = FALSE])
+  
+  curveID_cols <- grep("curveID", colnames(X))
+  if (length(curveID_cols) > 0)
+    X[, curveID_cols] <- 0
+  
+  newdat$fit   <- as.vector(X %*% coefs)
+  newdat$se    <- sqrt(rowSums((X %*% Vb) * X))
   newdat$upper <- newdat$fit + 1.96 * newdat$se
   newdat$lower <- newdat$fit - 1.96 * newdat$se
   newdat$response <- response
@@ -30,7 +40,7 @@ make_pred_full <- function(model, response, n = 200) {
 make_pred_full_PC <- function(model, response, n = 200) {
   
   placeholder_species <- model$model$Species[1]
-  placeholder_curveID <- 9
+  placeholder_curveID <- model$model$curveID[1]
   
   newdat <- data.frame(
     Tleaf = seq(min(model$model$Tleaf), max(model$model$Tleaf), length.out = n),
@@ -39,14 +49,24 @@ make_pred_full_PC <- function(model, response, n = 200) {
     PC3   = mean(model$model$PC3),
     PC4   = mean(model$model$PC4),
     PC5   = mean(model$model$PC5),
-    Species = factor(placeholder_species, levels = levels(model$model$Species)),
+    Species = placeholder_species,
     curveID = placeholder_curveID
   )
   
-  preds <- predict(model, newdata = newdat, type = "response", se.fit = TRUE, exclude = "s(curveID)")
+  X <- predict(model, newdata = newdat, type = "lpmatrix")
+  coefs <- coef(model)
+  Vb <- vcov(model)
   
-  newdat$fit   <- preds$fit
-  newdat$se    <- preds$se.fit
+  species_cols <- grep("^Species", colnames(X))
+  if (length(species_cols) > 0)
+    X[, species_cols] <- rowMeans(X[, species_cols, drop = FALSE])
+  
+  curveID_cols <- grep("curveID", colnames(X))
+  if (length(curveID_cols) > 0)
+    X[, curveID_cols] <- 0
+  
+  newdat$fit   <- as.vector(X %*% coefs)
+  newdat$se    <- sqrt(rowSums((X %*% Vb) * X))
   newdat$upper <- newdat$fit + 1.96 * newdat$se
   newdat$lower <- newdat$fit - 1.96 * newdat$se
   newdat$response <- response
@@ -57,19 +77,29 @@ make_pred_full_PC <- function(model, response, n = 200) {
 make_pred_PC1 <- function(model, response, n = 200) {
   
   placeholder_species <- model$model$Species[1]
-  placeholder_curveID <- 9
+  placeholder_curveID <- model$model$curveID[1]
   
   newdat <- data.frame(
     Tleaf = seq(min(model$model$Tleaf), max(model$model$Tleaf), length.out = n),
     PC1   = mean(model$model$PC1),
-    Species = factor(placeholder_species, levels = levels(model$model$Species)),
+    Species = placeholder_species,
     curveID = placeholder_curveID
   )
   
-  preds <- predict(model, newdata = newdat, type = "response", se.fit = TRUE, exclude = "s(curveID)")
+  X <- predict(model, newdata = newdat, type = "lpmatrix")
+  coefs <- coef(model)
+  Vb <- vcov(model)
   
-  newdat$fit   <- preds$fit
-  newdat$se    <- preds$se.fit
+  species_cols <- grep("^Species", colnames(X))
+  if (length(species_cols) > 0)
+    X[, species_cols] <- rowMeans(X[, species_cols, drop = FALSE])
+  
+  curveID_cols <- grep("curveID", colnames(X))
+  if (length(curveID_cols) > 0)
+    X[, curveID_cols] <- 0
+  
+  newdat$fit   <- as.vector(X %*% coefs)
+  newdat$se    <- sqrt(rowSums((X %*% Vb) * X))
   newdat$upper <- newdat$fit + 1.96 * newdat$se
   newdat$lower <- newdat$fit - 1.96 * newdat$se
   newdat$response <- response
@@ -104,9 +134,9 @@ plot_environ_compare <- function(pred_env, pred_pc, pred_pc1, raw_df, response_n
   
   y_lab <- switch(
     response_name,
-    "A"    = expression(A~"(" * mu * mol ~ m^-2 ~ s^-1 * ")"),
-    "E"    = expression(E~"(" * mol ~ m^-2 ~ s^-1 * ")"),
-    "gsw"  = expression(g[sw]~"(" * mol ~ m^-2 ~ s^-1 * ")"),
+    "A"    = expression(italic(A)~"(" * mu * mol ~ m^-2 ~ s^-1 * ")"),
+    "E"    = expression(italic(E)~"(" * mol ~ m^-2 ~ s^-1 * ")"),
+    "gsw"  = expression(italic(g)[italic(sw)]~"(" * mol ~ m^-2 ~ s^-1 * ")"),
     "iWUE" = expression(iWUE~"(" * mu * mol ~ mol^-1 * ")"),
     "WUE"  = expression(WUE~"(" * mu * mol ~ mol^-1 * ")"),
     response_name
@@ -125,18 +155,18 @@ plot_environ_compare <- function(pred_env, pred_pc, pred_pc1, raw_df, response_n
                alpha = 0.005, size = 1) +
     # Confidence ribbons
     geom_ribbon(data = pred_env, aes(x = Tleaf, ymin = lower, ymax = upper),
-                fill = "blue", alpha = 0.3) +
+                fill = "#D81B60", alpha = 0.3) +
     geom_ribbon(data = pred_pc, aes(x = Tleaf, ymin = lower, ymax = upper),
-                fill = "red", alpha = 0.3) +
+                fill = "#1E88E5", alpha = 0.3) +
     geom_ribbon(data = pred_pc1, aes(x = Tleaf, ymin = lower, ymax = upper),
-                fill = "green", alpha = 0.3) +
+                fill = "#FFC107", alpha = 0.3) +
     # Fitted lines
     geom_line(data = pred_env, aes(x = Tleaf, y = fit, color = "Full Env"), linewidth = 1.2) +
     geom_line(data = pred_pc,  aes(x = Tleaf, y = fit, color = "Full PC"), linewidth = 1.2, linetype = "dashed") +
     geom_line(data = pred_pc1, aes(x = Tleaf, y = fit, color = "PC1-only"), linewidth = 1.2, linetype = "dotdash") +
-    scale_color_manual(values = c("Full Env" = "blue", "Full PC" = "red", "PC1-only" = "green")) +
+    scale_color_manual(values = c("Full Env" = "#D81B60", "Full PC" = "#1E88E5", "PC1-only" = "#FFC107")) +
     theme_classic() +
-    labs(x = expression(Leaf~Temperature~(degree*C)),
+    labs(x = expression(Leaf~temperature~(degree*C)),
          y = y_lab,
          color = "")
 }
