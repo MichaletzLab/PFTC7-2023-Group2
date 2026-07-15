@@ -1,3 +1,10 @@
+# Load packages
+library(dplyr)
+library(tidyverse)
+library(stringr)
+library(lubridate)
+library(readr)
+
 # Arrange Data -----------------------------------------------------------------
 raw.dat <- read.csv('data/raw.discardHooks_data.csv')
 raw.dat <- raw.dat%>%
