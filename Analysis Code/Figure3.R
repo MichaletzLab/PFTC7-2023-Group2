@@ -85,12 +85,15 @@ plot_top_PC1_sites <- function(pred_df, raw_df, response_name, ymax = NULL){
               aes(x = Tleaf, y = fit, color = PC1, group = PC1_group),
               linewidth = 1.4) +
     scale_color_viridis_c(option = "cividis", begin = 0.15, end = 1, 
-                          name = "PC1 score", guide = guide_colourbar()) +
+                          name = "PC1 score", 
+                          guide = guide_colourbar(barheight = 20, barwidth = 1.5)) +
     theme_classic(base_size = 24) +
     theme(
       aspect.ratio      = 1,
       plot.background   = element_rect(fill = "white", colour = NA),
-      panel.background  = element_rect(fill = "white", colour = NA)
+      panel.background  = element_rect(fill = "white", colour = NA),
+      legend.text        = element_text(size = 16),
+      legend.title       = element_text(size = 18)
     ) +
     labs(x = expression(Leaf~temperature~(degree*C)),
          y = y_lab)
