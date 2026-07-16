@@ -75,16 +75,12 @@ plot_top_PC1_sites <- function(pred_df, raw_df, response_name, ymax = NULL){
   optima <- find_opt_Tleaf(pred_df)
   
   ggplot() +
-    # 1. Background: grey cloud
     geom_point(data = raw_df,
                aes(x = Tleaf, y = .data[[response_name]]),
                color = "grey95", alpha = 0.06, size = 1) +
-    # 2. White halo -- same data/grouping as the colored lines below, fixed
-    # white, drawn wider so a thin rim shows once the colored line sits on top
     geom_line(data = pred_df,
               aes(x = Tleaf, y = fit, group = PC1_group),
               color = "white", linewidth = 2.2) +
-    # 3. Site-level GAM lines, colored by PC1, drawn last so they sit on top
     geom_line(data = pred_df,
               aes(x = Tleaf, y = fit, color = PC1, group = PC1_group),
               linewidth = 1.4) +
