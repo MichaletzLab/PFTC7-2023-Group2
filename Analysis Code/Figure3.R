@@ -1,3 +1,8 @@
+# libraries
+library(mgcv)
+library(ggpubr)
+library(cowplot)
+
 raw.env.data_pca <- raw.env.data_pca %>%
   mutate(PC1_group = as.factor(round(PC1, 4))) %>%
   mutate(WUE = A / E)
@@ -67,21 +72,30 @@ plot_top_PC1_sites <- function(pred_df, raw_df, response_name, ymax = NULL){
     pred_df <- pred_df %>% filter(fit < ymax)
   }
   
-  # --- find maxima
   optima <- find_opt_Tleaf(pred_df)
   
   ggplot() +
+    # 1. Background: grey cloud
     geom_point(data = raw_df,
-               aes(x = Tleaf, y = .data[[response_name]], color = PC1_group),
-               alpha = 0.002, size = 1) +
+               aes(x = Tleaf, y = .data[[response_name]]),
+               color = "grey95", alpha = 0.06, size = 1) +
+    # 2. White halo -- same data/grouping as the colored lines below, fixed
+    # white, drawn wider so a thin rim shows once the colored line sits on top
     geom_line(data = pred_df,
-              aes(x = Tleaf, y = fit, color = PC1_group),
-              linewidth = 1) +
-    #geom_vline(data = optima,
-    #           aes(xintercept = Tleaf, color = PC1_group),
-    #           linetype = "dashed", linewidth = 0.8) +
-    scale_color_viridis_d(option = "viridis", name = "PC1 score") +
+              aes(x = Tleaf, y = fit, group = PC1_group),
+              color = "white", linewidth = 2.2) +
+    # 3. Site-level GAM lines, colored by PC1, drawn last so they sit on top
+    geom_line(data = pred_df,
+              aes(x = Tleaf, y = fit, color = PC1, group = PC1_group),
+              linewidth = 1.4) +
+    scale_color_viridis_c(option = "cividis", begin = 0.15, end = 1, 
+                          name = "PC1 score", guide = guide_colourbar()) +
     theme_classic(base_size = 24) +
+    theme(
+      aspect.ratio      = 1,
+      plot.background   = element_rect(fill = "white", colour = NA),
+      panel.background  = element_rect(fill = "white", colour = NA)
+    ) +
     labs(x = expression(Leaf~temperature~(degree*C)),
          y = y_lab)
 }
@@ -151,7 +165,7 @@ deriv_with_ci_overall <- function(model, n = 200, alpha = 0.05) {
   )
 }
 
-plot_deriv_overall <- function(deriv_df, response_name){
+plot_deriv_overall <- function(deriv_df, response_name, shade_range = NULL){
   
   y_lab <- switch(
     response_name,
@@ -163,7 +177,17 @@ plot_deriv_overall <- function(deriv_df, response_name){
     bquote(frac(d*italic(.(response_name)), d*italic(T)[leaf]))
   )
   
-  ggplot(deriv_df, aes(x = Tleaf)) +
+  p <- ggplot(deriv_df, aes(x = Tleaf))
+  
+  # Decoupling-window band: pale warm neutral, drawn first (behind everything)
+  if (!is.null(shade_range)) {
+    p <- p + annotate("rect",
+                      xmin = shade_range[1], xmax = shade_range[2],
+                      ymin = -Inf, ymax = Inf,
+                      fill = "#D6C7EA", alpha = 0.5, color = NA)
+  }
+  
+  p +
     geom_ribbon(
       aes(ymin = lower, ymax = upper),
       fill = "grey70", alpha = 0.4
@@ -174,6 +198,11 @@ plot_deriv_overall <- function(deriv_df, response_name){
     ) +
     geom_hline(yintercept = 0, linetype = "dashed") +
     theme_classic(base_size = 24) +
+    theme(
+      aspect.ratio      = 1,
+      plot.background   = element_rect(fill = "white", colour = NA),
+      panel.background  = element_rect(fill = "white", colour = NA)
+    ) +
     labs(
       x = expression(Leaf~temperature~(degree*C)),
       y = y_lab
@@ -187,9 +216,40 @@ deriv_gsw <- deriv_with_ci_overall(gam_mod_gsw_PC1)
 deriv_iW  <- deriv_with_ci_overall(gam_mod_iWUE_PC1)
 deriv_eW  <- deriv_with_ci_overall(gam_mod_WUE_PC1)
 
+# --- Decoupling window ---
+# Finds first Tleaf where the upper CI crosses 0
+find_upper_crossing <- function(deriv_df) {
+  df <- deriv_df[order(deriv_df$Tleaf), ]
+  idx <- which(df$upper[-nrow(df)] >= 0 & df$upper[-1] < 0)
+  if (length(idx) == 0) {
+    warning("No zero-crossing found in upper CI bound.")
+    return(NA_real_)
+  }
+  i <- idx[1]
+  T1 <- df$Tleaf[i];     U1 <- df$upper[i]
+  T2 <- df$Tleaf[i + 1]; U2 <- df$upper[i + 1]
+  T1 + (0 - U1) * (T2 - T1) / (U2 - U1)
+}
+
+# Lower bound: onset of significant A decline (dA/dTleaf CI -> entirely negative)
+Tleaf_lower <- find_upper_crossing(deriv_A)
+# Upper bound: onset of significant E decline (dE/dTleaf CI -> entirely negative)
+Tleaf_upper <- find_upper_crossing(deriv_E)
+
+message(sprintf("Decoupling window: %.2f to %.2f deg C", Tleaf_lower, Tleaf_upper))
+
+# --- Rescale panel G for a narrower y-axis to better align with other panels
+# Data are scaled by 10^4 (multiplier included in axis title)
+scale_factor_E <- 1e4
+deriv_E_scaled <- deriv_E %>%
+  mutate(deriv = deriv * scale_factor_E,
+         lower = lower * scale_factor_E,
+         upper = upper * scale_factor_E)
+
 # --- Create derivative plots ---
-dA  <- plot_deriv_overall(deriv_A, "A")
-dE  <- plot_deriv_overall(deriv_E, "E")
+dA  <- plot_deriv_overall(deriv_A, "A", shade_range = c(Tleaf_lower, Tleaf_upper))
+dE  <- plot_deriv_overall(deriv_E_scaled, "E", shade_range = c(Tleaf_lower, Tleaf_upper)) +
+  labs(y = bquote(frac(d*italic(E), d*italic(T)[leaf]) ~ "(x" * 10^-4 * ")"))
 dG  <- plot_deriv_overall(deriv_gsw, "gsw")
 dI  <- plot_deriv_overall(deriv_iW, "iWUE")
 dEw <- plot_deriv_overall(deriv_eW, "WUE")
@@ -198,31 +258,58 @@ dEw <- plot_deriv_overall(deriv_eW, "WUE")
 # --- Combine All Plots (5 on top, 5 derivatives below)
 # =========================================================
 
-final_plot <- ggarrange(
-  ggarrange(
-    pA, pE, pG, pEw, pI,
-    ncol = 3, nrow = 2,
-    labels = c("A", "B", "C", "D", "E"),
-    font.label = list(size = 28, face = "bold"),
-    common.legend = TRUE,
-    legend = "right"
-  ),
-  ggarrange(
-    dA, dE, dG, dEw, dI,
-    ncol = 3, nrow = 2,
-    labels = c("F", "G", "H", "I", "J"),
-    font.label = list(size = 28, face = "bold")
-  ),
-  ncol = 1, nrow = 2,
-  heights = c(1, 1)
+# Shared x-axis: only show axis title on bottom panels (E and J)
+# pI and dI keep their x-axis titles
+pA  <- pA  + theme(axis.title.x = element_blank())
+pE  <- pE  + theme(axis.title.x = element_blank())
+pG  <- pG  + theme(axis.title.x = element_blank())
+pEw <- pEw + theme(axis.title.x = element_blank())
+dA  <- dA  + theme(axis.title.x = element_blank())
+dE  <- dE  + theme(axis.title.x = element_blank())
+dG  <- dG  + theme(axis.title.x = element_blank())
+dEw <- dEw + theme(axis.title.x = element_blank())
+
+# Extract the shared legend from pA before stripping legends for the grid
+legend_pc1 <- get_legend(pA)
+
+pA_nl  <- pA  + theme(legend.position = "none")
+pE_nl  <- pE  + theme(legend.position = "none")
+pG_nl  <- pG  + theme(legend.position = "none")
+pEw_nl <- pEw + theme(legend.position = "none")
+pI_nl  <- pI  + theme(legend.position = "none")
+
+# align = "hv", axis = "tblr" equalizes each panel's actual plotting-region
+# margins (not just its outer box) across the whole grid -- this is what
+# makes every panel's x-axis start/end at the same screen position, so the
+# decoupling band renders identically in F and G.
+panel_grid <- plot_grid(
+  pA_nl, dA,
+  pE_nl, dE,
+  pG_nl, dG,
+  pEw_nl, dEw,
+  pI_nl, dI,
+  ncol  = 2,
+  align = "hv",
+  axis  = "tblr",
+  labels = c("A", "F", "B", "G", "C", "H", "D", "I", "E", "J"),
+  label_size = 28,
+  label_fontface = "bold"
 )
+
+final_plot <- plot_grid(
+  panel_grid, legend_pc1,
+  ncol = 2,
+  rel_widths = c(1, 0.12)
+)
+
 ggsave(
-  filename = "PC1_GAM_derivatives.png",
+  filename = "Figure3.png",
   plot = final_plot,
-  width  = 20,
-  height = 20,
+  width  = 16,
+  height = 28,
   units  = "in",
   dpi    = 300,
+  bg     = "white",
   limitsize = FALSE
 )
 
