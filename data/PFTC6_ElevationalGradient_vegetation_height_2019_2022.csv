@@ -1,0 +1,17 @@
+year,siteID,blockID,plotID,turfID,vegetation_height
+2019,Hogsete,Hog1,101,101 TTC,7.5
+2019,Hogsete,Hog2,110,110 TTC,11.5
+2019,Hogsete,Hog3,115,115 TTC,9
+2019,Hogsete,Hog4,116,116 TTC,15.25
+2019,Hogsete,Hog5,124,124 TTC,15.25
+2019,Vikesland,Vik1,126,126 TTC,4.4
+2019,Vikesland,Vik2,134,134 TTC,11
+2019,Vikesland,Vik3,140,140 TTC,10.5
+2019,Vikesland,Vik4,141,141 TTC,6.8
+2019,Vikesland,Vik5,146,146 TTC,7.8
+2022,Joasete,1,81,81 AN1C 81,10.175
+2022,Joasete,10,156,156 AN2C 156,20
+2022,Joasete,4,109,109 AN3C 109,6.75
+2022,Liahovden,1,4,4 AN1C 4,2.5
+2022,Liahovden,10,77,77 AN2C 77,2
+2022,Liahovden,4,27,27 AN3C 27,2.55
