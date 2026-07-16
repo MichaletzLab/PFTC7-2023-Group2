@@ -1,3 +1,6 @@
+# libraries
+library(mgcv)
+
 # ---- Fit GAMs ----
 gam_mod_A_PC1   <- gam(A    ~ s(Tleaf, k=5) + s(PC1, k=5) + ti(Tleaf, PC1, k=5) 
                        + Species + s(curveID, bs="re"),                       
