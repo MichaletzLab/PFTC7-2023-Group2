@@ -6,13 +6,7 @@ library(ggplot2)
 library(ggpubr)
 library(cowplot)
 
-# --- Temperature palette (updated names) ---
-temp_colors <- c(
-  "Soil, -8 cm" = "#D55E00",  # vermillion/orange
-  "Surface, 0 cm"  = "#009E73",  # bluish green
-  "Air, +15 cm" = "#0072B2"   # dark blue
-)
-
+# --- Country palette ---
 country_colors <- c(
   "South Africa" = "#E69F00",  # amber/gold
   "Norway"       = "#0072B2"   # dark blue
@@ -21,56 +15,63 @@ country_colors <- c(
 # --- Temperature plot ---
 temp.plot <- env_all_long %>%
   filter(Variable %in% c("Soil, -8 cm", "Surface, 0 cm", "Air, +15 cm")) %>%
+  mutate(Variable = factor(
+    dplyr::recode(Variable,
+                  "Soil, -8 cm"   = "Soil",
+                  "Surface, 0 cm" = "Surface",
+                  "Air, +15 cm"   = "Air"),
+    levels = c("Soil", "Surface", "Air")
+  )) %>%
   ggplot(aes(x = Elevation, y = Value,
-             color = Variable,
-             shape = Country)) +
-  geom_point(alpha = 0.4, size = 1.5) +
-  geom_smooth(method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
-  scale_color_manual(values = temp_colors, name = "") +
-  scale_shape_manual(values = c("Norway" = 16, "South Africa" = 17),
-                     name = "") +
-  theme_classic(base_size = 14) +
+             color = Country,
+             fill = Country,
+             shape = Variable,
+             linetype = Variable)) +
+  geom_point(alpha = 0.15, size = 1.5) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 1, alpha = 0.15) +
+  scale_color_manual(values = country_colors, name = "") +
+  scale_fill_manual(values = country_colors, guide = "none") +
+  scale_shape_manual(values = c("Soil" = 15, "Surface" = 16, "Air" = 17), name = "") +
+  scale_linetype_manual(values = c("Soil" = "solid", "Surface" = "dashed", "Air" = "dotted"), name = "") +
+  guides(shape = guide_legend(override.aes = list(color = "black", alpha = 1, fill = NA, size = 3),
+                              keywidth = unit(1.5, "cm")),
+         linetype = guide_legend(override.aes = list(color = "black", alpha = 1, fill = NA, size = 3),
+                                 keywidth = unit(1.5, "cm"))) +
+  theme_classic(base_size = 18) +
   labs(x = "Elevation (m a.s.l.)", y = "Temperature (°C)") +
-  theme(legend.position = "right",
-        legend.box = "vertical")
+  theme(legend.position = "right", legend.box = "vertical",
+        legend.key = element_blank())
 
 # --- Moisture vs. Elevation ---
 moist.plot <- env_all_long %>%
   filter(Variable == "Soil moisture") %>%
-  ggplot(aes(x = Elevation, y = Value,
-             color = Country, shape = Country)) +
-  geom_point(alpha = 0.4, size = 1.5) +
+  ggplot(aes(x = Elevation, y = Value, color = Country)) +
+  geom_point(alpha = 0.4, size = 1.5, shape = 16) +
   geom_smooth(method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
   scale_color_manual(values = country_colors, name = "") +
-  scale_shape_manual(values = c("Norway" = 16, "South Africa" = 17),
-                     name = "") +
-  theme_classic(base_size = 14) +
+  guides(color = guide_legend(override.aes = list(fill = NA, size = 3, alpha = 1))) +
+  theme_classic(base_size = 18) +
   labs(x = "Elevation (m a.s.l.)", y = "VWC (%)") +
-  theme(legend.position = "right")
+  theme(legend.position = "right",
+        legend.key = element_blank())
 
 # --- Vegetation height vs. Elevation ---
 height.plot <- ggplot(raw.env.data_pca,
-                      aes(x = Elevation, y = vegetation_height,
-                          color = Country, shape = Country)) +
-  geom_point(size = 2, alpha = 0.8) +
+                      aes(x = Elevation, y = vegetation_height, color = Country)) +
+  geom_point(size = 2, alpha = 0.8, shape = 16) +
   geom_smooth(method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
   scale_color_manual(values = country_colors, name = "") +
-  scale_shape_manual(values = c("Norway" = 16, "South Africa" = 17),
-                     name = "") +
-  theme_classic(base_size = 14) +
+  theme_classic(base_size = 18) +
   labs(x = "Elevation (m a.s.l.)", y = "Vegetation height (cm)") +
   theme(legend.position = "none")
 
 # --- PC1 vs. Elevation ---
 pc.plot <- ggplot(raw.env.data_pca,
-                  aes(x = Elevation, y = PC1,
-                      color = Country, shape = Country)) +
-  geom_point(size = 2, alpha = 0.8) +
+                  aes(x = Elevation, y = PC1, color = Country)) +
+  geom_point(size = 2, alpha = 0.8, shape = 16) +
   geom_smooth(method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
   scale_color_manual(values = country_colors, name = "") +
-  scale_shape_manual(values = c("Norway" = 16, "South Africa" = 17),
-                     name = "") +
-  theme_classic(base_size = 14) +
+  theme_classic(base_size = 18) +
   labs(x = "Elevation (m a.s.l.)", y = "PC1 (dimensionless)") +
   theme(legend.position = "none")
 
@@ -78,15 +79,15 @@ pc.plot <- ggplot(raw.env.data_pca,
 legend_country <- get_legend(
   moist.plot + theme(legend.position = "bottom",
                      legend.box = "horizontal",
-                     legend.title = element_text(size = 12))
+                     legend.title = element_text(size = 14))
 )
 
 legend_temp <- get_legend(
   temp.plot +
-    guides(shape = "none") +  # show only color legend
+    guides(color = "none") +   # hide Country color legend here (already have it from moist.plot)
     theme(legend.position = "bottom",
           legend.box = "horizontal",
-          legend.title = element_text(size = 12))
+          legend.title = element_text(size = 14))
 )
 
 # --- Remove legends from main plots ---
@@ -101,8 +102,8 @@ plot.4way <- ggarrange(
   height.plot_noleg, pc.plot_noleg,
   nrow = 2, ncol = 2,
   labels = c("A", "B", "C", "D"),
-  label.x = 0.05,   # move letters slightly right
-  label.y = 0.98,
+  label.x = 0.08,   # move letters slightly right
+  label.y = 1,
   font.label = list(size = 14, face = "bold")
 )
 
@@ -143,7 +144,7 @@ summary(lm(Value ~ Elevation * Country,
 
 summary(lm(Value ~ Elevation * Country * Variable,
            data = env_all_long %>%
-             filter(Variable %in% c("Soil, -8 cm", "Surface, 0 cm", "Air, 15 cm"))))
+             filter(Variable %in% c("Soil, -8 cm", "Surface, 0 cm", "Air, +15 cm"))))
 
 
 
@@ -157,12 +158,19 @@ summary(lm(Value ~ Elevation * Country * Variable,
 
 
 
-
+# Old code below
 
 library(dplyr)
 library(ggplot2)
 library(ggpubr)
 library(cowplot)
+
+# --- Temperature palette (updated names) ---
+temp_colors <- c(
+  "Soil, -8 cm" = "#D55E00",  # vermillion/orange
+  "Surface, 0 cm"  = "#009E73",  # bluish green
+  "Air, +15 cm" = "#0072B2"   # dark blue
+)
 
 # --- Make figures with PC1 as x ----
 # --- Temperature plot (keep the legend here) ---
