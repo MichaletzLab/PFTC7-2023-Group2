@@ -99,7 +99,4 @@ pc_scores <- as.data.frame(pca_res$x)
 
 raw.env.data_pca <- raw.env.data %>%
   bind_cols(pc_scores)
-raw.env.data_pca <- raw.env.data_pca %>%
-  mutate(Species = if_else(Species == "senecio_cf_scitus",
-                           "Senecio cf scitus",
-                           Species))
+
