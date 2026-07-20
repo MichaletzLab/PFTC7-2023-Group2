@@ -204,20 +204,23 @@ env_by_elev <- air_by_elev %>%
 # --- Now join these onto raw.dat ---
 raw.env.data <- raw.dat %>%
   left_join(env_by_elev, by = "Elevation")
-species_lookup_raw <- tibble::tribble(
-  ~raw,                  ~clean,
-  "Achillea millefolium", "Achillea millefolium",
-  "Agrostis capillaris",  "Agrostis capillaris",
-  "Alchemilla alpina",    "Alchemilla alpina",
-  "Vaccinium vitis-idaea","Vaccinium vitis-idaea",
-  "dimorphotheca_jucunda","Dimorphotheca jucunda",
-  "eucomis_cf_humilis",   "Eucomis bicolor",
-  "helichrysum_ecklonis", "Helichrysum ecklonis",
-  "helichrysum_nudifolium","Helichrysum nudifolium",
-  "helichrysum_pallidum", "Helichrysum pallidum",
-  "helichrysum_pilosellum","Helichrysum piloselum",
-  "senecio_glaberrimus",  "Senecio glaberrimus",
-  "senecio_tall",         "Senecio tall"
+species_lookup_raw <- tibble::tribble( # stm: updated to correct species names
+  ~raw,                     ~clean,
+  # Norway (already binomial from Norway key)
+  "Achillea millefolium",   "Achillea millefolium",
+  "Agrostis capillaris",    "Agrostis capillaris",
+  "Alchemilla alpina",      "Alchemilla alpina",
+  "Vaccinium vitis-idaea",  "Vaccinium vitis-idaea",
+  # South Africa (Faster_Key binomials -> official names used in paper)
+  "Dimorphotheca jucunda",  "Dimorphotheca jucunda",
+  "Eucomis bicolor",        "Eucomis bicolor",
+  "Helichrysum ecklonis",   "Helichrysum ecklonis",
+  "Helichrysum nudifolium", "Helichrysum nudifolium var. nudifolium",
+  "Helichrysum pallidum",   "Helichrysum pallidum",
+  "Helichrysum piloselum",  "Helichrysum nudifolium var. piloselum",
+  "Hypoxis costata",        "Hypoxis costata",
+  "Senecio glaberrimus",    "Senecio glaberrimus",
+  "Senecio tall",           "Senecio scitus"
 )
 
 raw.env.data <- raw.env.data %>%
