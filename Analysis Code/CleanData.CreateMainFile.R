@@ -33,13 +33,13 @@ source("code/fit_mod_schoolfield_gsw.R")
 source("code/fit_mod_schoolfield_iWUE.R")
 source("code/fit_mod_schoolfield_eWUE.R")
 
-setwd("data/FasterLicorSA") ##Right now these are actually on desktop
+licor_dir <- "data/FasterLicorSA" # stm: replaced setwd() with path to files
 
 # load list of file paths for Licor data
-at.files = list.files(full.names=T)
+at.files = list.files(licor_dir, full.names=T)
 
-# extract list of IDs from the file names
-at.ids <- lapply(at.files, function(x)strsplit(x, split = "[.]")[[1]][3]) #save the individual IDs, extracted from file names
+# extract IDs from the file names
+at.ids <- lapply(at.files, function(x) sub(".*_logdata\\.([0-9]+).*", "\\1", basename(x))) #save the individual IDs, extracted from file names
 
 # LOAD LICOR FILES
 file.x <- list()
@@ -79,7 +79,7 @@ file.x <- file.x[lengths(file.x) != 0] # remove empty placeholders
 at.df <- do.call(bind_rows, file.x) # combine files into 1 dataframe
 at.df <- subset(at.df, A >= -5) # remove unreasonable A values
 
-#Change working directory back to project here!
+
 
 # Add in the key for curveID and barcodes from photosynthesis group
 at.meta = read.csv("data/Faster_Key.csv") %>%
