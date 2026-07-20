@@ -119,7 +119,7 @@ write.csv(FT_new_name_system, "data/PFTC7_SA_clean_traits_08May2024.csv") # writ
 ## If you want to include further trait data - modify the select to include other rows (or remove this line to include all of the trait data)
 at.meta.full.S = FT_new_name_system%>%
   mutate(BarcodeLeaf = id)%>%
-  dplyr::select(id,BarcodeLeaf, leaf_area_cm2, species)
+  dplyr::select(id, BarcodeLeaf, leaf_area_cm2) # stm: removed 'species' from select() to prevent spp name reassignment which caused downstream data loss
 
 # Join based on BarcodeCutout
 merged_df <- at.all %>%
@@ -129,9 +129,9 @@ merged_df <- mutate(merged_df, CutoutArea = ifelse(leaf_area_cm2 < 6, leaf_area_
 # Replace S (licor variable for area) with correct leaf area and fix species column
 at.all.n = merged_df %>% 
   mutate(S = CutoutArea)%>%
-  mutate(S = ifelse(is.na(S), 6, S))%>%
-  select(-Species)%>%
-  rename(Species = species)
+  mutate(S = ifelse(is.na(S), 6, S)) # stm: removed select() and rename() from this pipeline to fix species name issues and downstrem data loss
+  
+  
 
 
 # Recalculate gas exchange variables using new leaf area
