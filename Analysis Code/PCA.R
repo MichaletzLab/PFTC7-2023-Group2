@@ -8,21 +8,29 @@ country_colors <- c(
   "South Africa" = "#E69F00"
 )
 
-set.seed(123)
-sample_idx <- sample(1:nrow(raw.env.data), 1000)  # sample points
+set.seed(123) # stm: I don't think this is necessary, but leaving so as to not break anything (far) downstream
 
-# Select environmental variables for PCA
-env_pca <- raw.env.data %>%
+# Use one row per site; the five env variables are site-level means (DataPrep.R),
+# so distinct() collapses point-level replication and to give sites equal weight
+env_site <- raw.env.data %>%
+  distinct(Elevation, Country,
+           mean_moist_pct, mean_air, mean_T1, mean_T2, vegetation_height)
+
+env_pca <- env_site %>%
   select(mean_moist_pct, mean_air, mean_T1, mean_T2, vegetation_height)
 
-# Scale and run PCA
-env_matrix <- scale(env_pca)
-pca_res <- prcomp(env_matrix, center = TRUE, scale. = TRUE)
+# prcomp centers and scales once (drop the separate scale() call)
+pca_res <- prcomp(env_pca, center = TRUE, scale. = TRUE)
 
-# Extract PC scores and subset to sampled points
+# Pin PC1 orientation to cool-to-warm (positive air-temperature loading)
+if (pca_res$rotation["mean_air", "PC1"] < 0) {
+  pca_res$rotation[, "PC1"] <- -pca_res$rotation[, "PC1"]
+  pca_res$x[, "PC1"]        <- -pca_res$x[, "PC1"]
+}
+
+# One score row per site
 pc_scores <- as.data.frame(pca_res$x) %>%
-  bind_cols(raw.env.data %>% select(Elevation, Country)) %>% # include colors
-  slice(sample_idx)  # keep only sampled points
+  bind_cols(env_site %>% select(Elevation, Country))
 
 # Identify unique elevations among sampled points
 unique_elevs <- pc_scores %>%
@@ -94,9 +102,11 @@ pca_plot <- ggplot() +
 
 pca_plot
 
-# --- Extract PC scores and rejoin back to main dataframe ---
-pc_scores <- as.data.frame(pca_res$x)
+# --- Rejoin site-level PC scores to point-level data by Elevation ---
+site_scores <- env_site %>%
+  select(Elevation) %>%
+  bind_cols(as.data.frame(pca_res$x))
 
 raw.env.data_pca <- raw.env.data %>%
-  bind_cols(pc_scores)
+  left_join(site_scores, by = "Elevation")
 
