@@ -8,6 +8,7 @@ library(readr)
 # Arrange Data -----------------------------------------------------------------
 raw.dat <- read.csv('data/raw.discardHooks_data.csv')
 raw.dat <- raw.dat%>%
+  filter(curveID != 63)%>%   # exclude curve 63 (impossible gsw below ~29 C)
   filter(gsw<0.6, gsw>-1)%>%
   filter(!is.na(Tair), !is.na(A), !is.na(Species))
 
