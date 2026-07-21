@@ -62,8 +62,8 @@ plot_top_PC1_sites <- function(pred_df, raw_df, response_name, ymax = NULL){
     "A"    = expression(italic(A)~"(" * mu * mol ~ m^-2 ~ s^-1 * ")"),
     "E"    = expression(italic(E)~"(" * mol ~ m^-2 ~ s^-1 * ")"),
     "gsw"  = expression(italic(g[sw])~"(" * mol ~ m^-2 ~ s^-1 * ")"),
-    "iWUE" = expression(iWUE~"(" * mu * mol ~ mol^-1 * ")"),
-    "WUE"  = expression(WUE~"(" * mu * mol ~ mol^-1 * ")"),
+    "iWUE" = expression("iWUE"~"(" * mu * mol ~ mol^-1 * ")"),
+    "WUE"  = expression("WUE"~"(" * mu * mol ~ mol^-1 * ")"),
     response_name
   )
   
