@@ -1,130 +1,140 @@
 library(lme4)
 library(lmerTest)
-library(broom.mixed)
 library(dplyr)
 library(ggplot2)
-library(tibble)
-library(ggtext)
-library(ggpubr)
+library(cowplot)
 
-# --- Fit model
-mod <- lmer(E ~ Tleaf * PC1 + (1 + Tleaf || Species/curveID),
-            data = raw.env.data_pca)
-summary(mod)
-# --- Extract fixed effects
-coefs <- fixef(mod)
-b1 <- coefs["Tleaf"]
-b3 <- coefs["Tleaf:PC1"]
-b0 <- coefs["(Intercept)"]
-b_PC1 <- coefs["PC1"]
-# --- Get species-level random effects
-species_ranefs <- ranef(mod)$Species %>%
-  as.data.frame() %>%
-  rename(intercept_r = `(Intercept)`, slope_r = Tleaf) %>%
-  rownames_to_column("Species")
-# --- Get full range of PC1
-pc1_vals <- unique(raw.env.data_pca$PC1)
-# --- Compute per-species slope lines
-slope_data <- expand.grid(
-  PC1 = pc1_vals,
-  Species = unique(species_ranefs$Species)
-) %>%
-  left_join(species_ranefs, by = "Species") %>%
-  mutate(
-    slope_Tleaf = (b1 + slope_r) + b3 * PC1
-  )
-# --- Compute per-species intercept lines
-intercept_data <- expand.grid(
-  PC1 = pc1_vals,
-  Species = unique(species_ranefs$Species)
-) %>%
-  left_join(species_ranefs, by = "Species") %>%
-  mutate(
-    intercept = (b0 + intercept_r) + b_PC1 * PC1  # intercept changes with PC1
-  )
-# --- Extract p-values
-pval_slope <- summary(mod)$coefficients["Tleaf:PC1", "Pr(>|t|)"]
-pval_intercept <- summary(mod)$coefficients["PC1", "Pr(>|t|)"]
+# Create WUE = A/E, with Tleaf centered at 25 C (consistent w/ Fig. 4 SS)
+dat5 <- raw.env.data_pca %>%
+  mutate(WUE = A / E, Tc = Tleaf - 25, Site = factor(Elevation))
 
-# Build plotmath labels: italic binomial, roman "var."
+sp_levels <- sort(unique(as.character(dat5$Species)))
+pc1_lim   <- range(dat5$PC1, na.rm = TRUE)
+pc1_seq   <- seq(pc1_lim[1], pc1_lim[2], length.out = 100)
+
 species_labels <- function(levels) {
   out <- lapply(levels, function(s) {
     if (grepl(" var. ", s, fixed = TRUE)) {
       parts <- strsplit(s, " var. ", fixed = TRUE)[[1]]
-      g <- strsplit(parts[1], " ")[[1]]     # genus + species
-      bquote(italic(.(g[1]))~italic(.(g[2]))~"var."~italic(.(parts[2])))
+      g <- strsplit(parts[1], " ")[[1]]
+      bquote(italic(.(g[1])) ~ italic(.(g[2])) ~ "var." ~ italic(.(parts[2])))
     } else {
       g <- strsplit(s, " ")[[1]]
-      if (length(g) == 2) bquote(italic(.(g[1]))~italic(.(g[2])))
-      else                bquote(italic(.(s)))   # safety for odd names
+      if (length(g) == 2) bquote(italic(.(g[1])) ~ italic(.(g[2])))
+      else bquote(italic(.(s)))
     }
   })
   do.call(expression, out)
 }
+sp_labs <- species_labels(sp_levels)
 
-sp_levels <- levels(factor(slope_data$Species))
-sp_labs   <- species_labels(sp_levels)
+# Define symbols and units
+u_flux       <- quote(mol ~ m^-2 ~ s^-1)                   # E, gsw : level
+u_flux_slope <- quote(mol ~ m^-2 ~ s^-1 ~ degree*"C"^-1)   # E, gsw : slope
+u_wue        <- quote(mu*mol ~ mol^-1)                     # WUE    : level
+u_wue_slope  <- quote(mu*mol ~ mol^-1 ~ degree*"C"^-1)     # WUE    : slope
 
+var_sym <- list(E = quote(italic(E)), gsw = quote(italic(g[sw])), WUE = quote("WUE"))
+var_ulv <- list(E = u_flux,       gsw = u_flux,       WUE = u_wue)       # level units
+var_usl <- list(E = u_flux_slope, gsw = u_flux_slope, WUE = u_wue_slope) # slope units
 
-# --- Slope plot
-p_slope <- ggplot(slope_data, aes(x = PC1, y = slope_Tleaf, color = Species)) +
-  geom_line() +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(
-    x = "PC1 (dimensionless)",
-    y = expression("Slope of " * italic(E) ~ "vs." ~ italic(T)[leaf]),
-    color = "Species"
-  ) +
-  annotate("text",
-           x = Inf, y = Inf,
-           label = paste0("p = ", signif(pval_slope, 3)),
-           hjust = 1.1, vjust = 8, size = 4.5) +
-  scale_color_discrete(labels = sp_labs) +
-  theme_classic(base_size = 13) +
-  theme(legend.text = element_text())
+# Trend + 95% CI for a linear combination (a + b*PC1) of two fixed effects
+fe_trend <- function(mod, a_name, b_name, xseq) {
+  fe <- fixef(mod); V <- as.matrix(vcov(mod))
+  a <- fe[[a_name]]; b <- fe[[b_name]]
+  Vaa <- V[a_name, a_name]; Vbb <- V[b_name, b_name]; Vab <- V[a_name, b_name]
+  fit <- a + b * xseq
+  se  <- sqrt(Vaa + xseq^2 * Vbb + 2 * xseq * Vab)
+  data.frame(PC1 = xseq, fit = fit, lwr = fit - 1.96 * se, upr = fit + 1.96 * se)
+}
 
-# --- Intercept plot
-p_intercept <- ggplot(intercept_data, aes(x = PC1, y = intercept, color = Species)) +
-  geom_line() +
-  labs(
-    x = "PC1 (dimensionless)",
-    y = expression("Intercept of " * italic(E) ~ "vs." ~ italic(T)[leaf]),
-    color = "Species"
-  ) +
-  annotate("text",
-           x = Inf, y = Inf,
-           label = paste0("p = ", signif(pval_intercept, 3)),
-           hjust = 1.1, vjust = 1.5, size = 4.5) +
-  scale_color_discrete(labels = sp_labs) +
-  theme_classic(base_size = 13) +
-  theme(legend.text = element_text())
+# Fit one variable and return OLS estimates, trends, p, and df for each curve
+# Fit one variable (full site structure, fall back to site intercept if singular)
+fit_var <- function(col, data) {
+  f_full <- as.formula(paste0(col,
+                              " ~ Tc * PC1 + (1 + Tc || Site) + (1 + Tc || Species/curveID)"))
+  mod <- suppressMessages(lmer(f_full, data = data))
+  structure_used <- "site intercept + slope"
+  if (isSingular(mod)) {
+    f_red <- as.formula(paste0(col,
+                               " ~ Tc * PC1 + (1 | Site) + (1 + Tc || Species/curveID)"))
+    mod <- suppressMessages(lmer(f_red, data = data))
+    structure_used <- if (isSingular(mod)) "site intercept only (still singular)"
+    else                 "site intercept only"
+  }
+  pc <- do.call(rbind, lapply(split(data, data$curveID), function(d) {
+    m <- lm(d[[col]] ~ d$Tc)
+    data.frame(curveID = d$curveID[1], Species = d$Species[1], PC1 = d$PC1[1],
+               intercept = unname(coef(m)[1]), slope = unname(coef(m)[2]))
+  }))
+  pc$Species <- factor(pc$Species, levels = sp_levels)
+  sc <- summary(mod)$coefficients
+  list(percurve    = pc,
+       trend_slope = fe_trend(mod, "Tc", "Tc:PC1", pc1_seq),
+       trend_int   = fe_trend(mod, "(Intercept)", "PC1", pc1_seq),
+       p_slope = sc["Tc:PC1", "Pr(>|t|)"], df_slope = sc["Tc:PC1", "df"],
+       p_int   = sc["PC1", "Pr(>|t|)"],    df_int   = sc["PC1", "df"],
+       structure = structure_used)
+}
 
-# --- Combine with labels A and B
-library(cowplot)
-# Extract legend from one plot
-legend <- get_legend(
-  p_slope + theme(legend.position = "right")
+# Panels: per-curve points + population trend + ribbon (v = "E","gsw","WUE")
+slope_panel <- function(res, v) {
+  sym <- var_sym[[v]]; u <- var_usl[[v]]
+  ggplot() +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+    geom_point(data = res$percurve, aes(PC1, slope, color = Species), size = 2, alpha = 0.8) +
+    geom_ribbon(data = res$trend_slope, aes(PC1, ymin = lwr, ymax = upr), fill = "grey70", alpha = 0.4) +
+    geom_line(data = res$trend_slope, aes(PC1, fit), color = "black", linewidth = 0.6) +
+    scale_color_discrete(drop = FALSE, labels = sp_labs) +
+    coord_cartesian(xlim = pc1_lim) +
+    labs(x = "PC1 (dimensionless)",
+         y = bquote("Slope of " * .(sym) ~ "vs." ~ italic(T[leaf]) ~ "(" * .(u) * ")"),
+         color = "Species") +
+    theme_classic(base_size = 12)
+}
+int_panel <- function(res, v) {
+  sym <- var_sym[[v]]; u <- var_ulv[[v]]
+  ggplot() +
+    geom_point(data = res$percurve, aes(PC1, intercept, color = Species), size = 2, alpha = 0.8) +
+    geom_ribbon(data = res$trend_int, aes(PC1, ymin = lwr, ymax = upr), fill = "grey70", alpha = 0.4) +
+    geom_line(data = res$trend_int, aes(PC1, fit), color = "black", linewidth = 0.6) +
+    scale_color_discrete(drop = FALSE, labels = sp_labs) +
+    coord_cartesian(xlim = pc1_lim) +
+    labs(x = "PC1 (dimensionless)",
+         y = bquote(.(sym) ~ "at 25" ~ degree*"C" ~ "(" * .(u) * ")"),
+         color = "Species") +
+    theme_classic(base_size = 12)
+}
+
+# Do fitting
+resE <- fit_var("E",   dat5)
+resG <- fit_var("gsw", dat5)
+resW <- fit_var("WUE", dat5)
+
+symE <- quote(italic(E)); symG <- quote(italic(g)[sw]); symW <- quote(WUE)
+
+# Report p and effective df
+cat("\n---- Figure 5 mixed models (Tleaf centered at 25 C) ----\n")
+cat(sprintf("%-5s  %-24s %-24s  %s\n", "var", "slope (Tc:PC1)", "level at 25 (PC1)", "site structure"))
+for (nm in c("E","gsw","WUE")) {
+  r <- switch(nm, E = resE, gsw = resG, WUE = resW)
+  cat(sprintf("%-5s  p=%.3g (df=%.1f)      p=%.3g (df=%.1f)   %s\n",
+              nm, r$p_slope, r$df_slope, r$p_int, r$df_int, r$structure))
+}
+
+panels <- list(
+  slope_panel(resE, "E"), slope_panel(resG, "gsw"), slope_panel(resW, "WUE"),
+  int_panel(resE, "E"),   int_panel(resG, "gsw"),   int_panel(resW, "WUE")
 )
-# Remove legends from individual plots
-p_slope_noleg <- p_slope + theme(legend.position = "none")
-p_intercept_noleg <- p_intercept + theme(legend.position = "none")
-# Combine plots and legend manually
-combined <- plot_grid(
-  p_slope_noleg, p_intercept_noleg,
-  labels = c("A", "B"),
-  ncol = 1, align = "v",
-  label_x = 0,   # move right, away from y-axis
-  label_y = 1.02   # move slightly above the panel
-)
-# Add shared legend
-Fig5 <- plot_grid(combined, legend, rel_widths = c(1, 0.5))
-#700 x 500
+legend <- get_legend(panels[[1]] + theme(legend.position = "right", legend.text = element_text()))
+panels_noleg <- lapply(panels, function(p) p + theme(legend.position = "none"))
+grid6 <- plot_grid(plotlist = panels_noleg, ncol = 3, nrow = 2, align = "hv",
+                   labels = "AUTO", label_x = 0, label_y = 1.02)
+Fig5 <- plot_grid(grid6, legend, ncol = 2, rel_widths = c(1, 0.28))
 
-# output PNG
-ggsave("Figure5.png", plot = Fig5,
-       width = 9, height = 5, units = "in",
+# Output PNG
+ggsave("Figure5.png", plot = Fig5, width = 13, height = 8, units = "in",
        dpi = 300, bg = "white", limitsize = FALSE)
 
-# output PDF
-ggsave("Figure5.pdf", plot = Fig5,
-       width = 9, height = 5, device = cairo_pdf)
+# Output PDF
+ggsave("Figure5.pdf", plot = Fig5, width = 13, height = 8, device = cairo_pdf)
