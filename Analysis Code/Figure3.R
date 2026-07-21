@@ -61,9 +61,9 @@ plot_top_PC1_sites <- function(pred_df, raw_df, response_name, ymax = NULL){
     response_name,
     "A"    = expression(italic(A)~"(" * mu * mol ~ m^-2 ~ s^-1 * ")"),
     "E"    = expression(italic(E)~"(" * mol ~ m^-2 ~ s^-1 * ")"),
-    "gsw"  = expression(italic(g)[sw]~"(" * mol ~ m^-2 ~ s^-1 * ")"),
-    "iWUE" = expression((iWUE)~"(" * mu * mol ~ mol^-1 * ")"),
-    "WUE"  = expression((WUE)~"(" * mu * mol ~ mol^-1 * ")"),
+    "gsw"  = expression(italic(g[sw])~"(" * mol ~ m^-2 ~ s^-1 * ")"),
+    "iWUE" = expression(iWUE~"(" * mu * mol ~ mol^-1 * ")"),
+    "WUE"  = expression(WUE~"(" * mu * mol ~ mol^-1 * ")"),
     response_name
   )
   
@@ -168,12 +168,12 @@ plot_deriv_overall <- function(deriv_df, response_name, shade_range = NULL){
   
   y_lab <- switch(
     response_name,
-    "A"    = bquote(frac(d*italic(A), d*italic(T)[leaf])),
-    "E"    = bquote(frac(d*italic(E), d*italic(T)[leaf])),
-    "gsw"  = bquote(frac(d*italic(g)[sw], d*italic(T)[leaf])),
-    "iWUE" = bquote(frac(d*(iWUE), d*italic(T)[leaf])),
-    "WUE"  = bquote(frac(d*(WUE), d*italic(T)[leaf])),
-    bquote(frac(d*italic(.(response_name)), d*italic(T)[leaf]))
+    "A"    = bquote(frac(d*italic(A), d*italic(T[leaf]))),
+    "E"    = bquote(frac(d*italic(E), d*italic(T[leaf]))),
+    "gsw"  = bquote(frac(d*italic(g[sw]), d*italic(T[leaf]))),
+    "iWUE" = bquote(frac(d*(iWUE), d*italic(T[leaf]))),
+    "WUE"  = bquote(frac(d*(WUE), d*italic(T[leaf]))),
+    bquote(frac(d*italic(.(response_name)), d*italic(T[leaf])))
   )
   
   p <- ggplot(deriv_df, aes(x = Tleaf))
@@ -248,7 +248,7 @@ deriv_E_scaled <- deriv_E %>%
 # --- Create derivative plots ---
 dA  <- plot_deriv_overall(deriv_A, "A", shade_range = c(Tleaf_lower, Tleaf_upper))
 dE  <- plot_deriv_overall(deriv_E_scaled, "E", shade_range = c(Tleaf_lower, Tleaf_upper)) +
-  labs(y = bquote(frac(d*italic(E), d*italic(T)[leaf]) ~ "(x" * 10^-4 * ")"))
+  labs(y = bquote(frac(d*italic(E), d*italic(T[leaf])) ~ "(x" * 10^-4 * ")"))
 dG  <- plot_deriv_overall(deriv_gsw, "gsw")
 dI  <- plot_deriv_overall(deriv_iW, "iWUE")
 dEw <- plot_deriv_overall(deriv_eW, "WUE")
