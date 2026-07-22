@@ -34,7 +34,10 @@ u_flux_slope <- quote(mol ~ m^-2 ~ s^-1 ~ degree*"C"^-1)   # E, gsw : slope
 u_wue        <- quote(mu*mol ~ mol^-1)                     # WUE    : level
 u_wue_slope  <- quote(mu*mol ~ mol^-1 ~ degree*"C"^-1)     # WUE    : slope
 
-var_sym <- list(E = quote(italic(E)), gsw = quote(italic(g[sw])), WUE = quote("WUE"))
+var_sym <- list(E = quote(italic(E)), gsw = quote(italic(g[sw])), WUE = quote(~"WUE"))
+sym_level <- list(E   = quote(italic(E[25])),
+                  gsw = quote(italic(g["sw,25"])),
+                  WUE = quote("WUE"[25]))
 var_ulv <- list(E = u_flux,       gsw = u_flux,       WUE = u_wue)       # level units
 var_usl <- list(E = u_flux_slope, gsw = u_flux_slope, WUE = u_wue_slope) # slope units
 
@@ -88,12 +91,13 @@ slope_panel <- function(res, v) {
     scale_color_discrete(drop = FALSE, labels = sp_labs) +
     coord_cartesian(xlim = pc1_lim) +
     labs(x = "PC1 (dimensionless)",
-         y = bquote("Slope of " * .(sym) ~ "vs." ~ italic(T[leaf]) ~ "(" * .(u) * ")"),
-         color = "Species") +
+         y = bquote(d * .(sym) / d * italic(T[leaf]) ~ "(" * .(u) * ")"),
+         color = "Species",
+         title = var_sym[[v]]) +
     theme_classic(base_size = 12)
 }
 int_panel <- function(res, v) {
-  sym <- var_sym[[v]]; u <- var_ulv[[v]]
+  sym <- sym_level[[v]]; u <- var_ulv[[v]]
   ggplot() +
     geom_point(data = res$percurve, aes(PC1, intercept, color = Species), size = 2, alpha = 0.8) +
     geom_ribbon(data = res$trend_int, aes(PC1, ymin = lwr, ymax = upr), fill = "grey70", alpha = 0.4) +
@@ -101,7 +105,7 @@ int_panel <- function(res, v) {
     scale_color_discrete(drop = FALSE, labels = sp_labs) +
     coord_cartesian(xlim = pc1_lim) +
     labs(x = "PC1 (dimensionless)",
-         y = bquote(.(sym) ~ "at 25" ~ degree*"C" ~ "(" * .(u) * ")"),
+         y = bquote(.(sym) ~ "(" * .(u) * ")"),
          color = "Species") +
     theme_classic(base_size = 12)
 }
@@ -111,7 +115,6 @@ resE <- fit_var("E",   dat5)
 resG <- fit_var("gsw", dat5)
 resW <- fit_var("WUE", dat5)
 
-symE <- quote(italic(E)); symG <- quote(italic(g)[sw]); symW <- quote(WUE)
 
 # Report p and effective df
 cat("\n---- Figure 5 mixed models (Tleaf centered at 25 C) ----\n")

@@ -135,12 +135,12 @@ plot_deriv_overall <- function(deriv_df, response_name, shade_range = NULL){
   
   y_lab <- switch(
     response_name,
-    "A"    = bquote(frac(d*italic(A), d*italic(T[leaf]))),
-    "E"    = bquote(frac(d*italic(E), d*italic(T[leaf]))),
-    "gsw"  = bquote(frac(d*italic(g[sw]), d*italic(T[leaf]))),
-    "iWUE" = bquote(frac(d*(iWUE), d*italic(T[leaf]))),
-    "WUE"  = bquote(frac(d*(WUE), d*italic(T[leaf]))),
-    bquote(frac(d*italic(.(response_name)), d*italic(T[leaf])))
+    "A"    = bquote(d*italic(A) / d*italic(T[leaf]) ~ "(" * mu*mol ~ m^-2 ~ s^-1 ~ degree*"C"^-1 * ")"),
+    "E"    = bquote(d*italic(E) / d*italic(T[leaf]) ~ "(" * mol ~ m^-2 ~ s^-1 ~ degree*"C"^-1 * ")"),
+    "gsw"  = bquote(d*italic(g[sw]) / d*italic(T[leaf]) ~ "(" * mol ~ m^-2 ~ s^-1 ~ degree*"C"^-1 * ")"),
+    "iWUE" = bquote(d~"iWUE" / d*italic(T[leaf]) ~ "(" * mu*mol ~ mol^-1 ~ degree*"C"^-1 * ")"),
+    "WUE"  = bquote(d~"WUE" / d*italic(T[leaf]) ~ "(" * mu*mol ~ mol^-1 ~ degree*"C"^-1 * ")"),
+    bquote(d*italic(.(response_name)) / d*italic(T[leaf]))
   )
   
   p <- ggplot(deriv_df, aes(x = Tleaf))
@@ -217,7 +217,7 @@ deriv_E_scaled <- deriv_E %>%
 # --- Create derivative plots ---
 dA  <- plot_deriv_overall(deriv_A, "A", shade_range = c(Tleaf_lower, Tleaf_upper))
 dE  <- plot_deriv_overall(deriv_E_scaled, "E", shade_range = c(Tleaf_lower, Tleaf_upper)) +
-  labs(y = bquote(frac(d*italic(E), d*italic(T[leaf])) ~ "(x" * 10^-4 * ")"))
+  labs(y = bquote(d*italic(E) / d*italic(T[leaf]) ~ "x" ~ 10^-4 ~ "(" * mol ~ m^-2 ~ s^-1 ~ degree*"C"^-1 * ")"))
 dG  <- plot_deriv_overall(deriv_gsw, "gsw")
 dI  <- plot_deriv_overall(deriv_iW, "iWUE")
 dEw <- plot_deriv_overall(deriv_eW, "WUE")
