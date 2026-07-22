@@ -9,34 +9,25 @@ raw.env.data_pca <- raw.env.data_pca %>%
 
 # --- Prediction helper for all 9 PC1 levels ---
 make_pred_PC1_sites <- function(model, response, n = 200) {
-  species_levels <- unique(model$model$Species)
-  placeholder_species <- species_levels[1]
+  placeholder_species <- unique(model$model$Species)[1]
+  placeholder_curve   <- model$model$curveID[1]
+  key <- unique(model$model[, c("PC1", "Site")])   # one row per site
   
-  # Use all unique PC1 values (one per site)
-  pc1_unique <- sort(unique(model$model$PC1))
-  
-  pred_list <- lapply(pc1_unique, function(pc1_val) {
+  pred_list <- lapply(seq_len(nrow(key)), function(k) {
     newdat <- expand.grid(
-      Tleaf = seq(min(model$model$Tleaf, na.rm = TRUE),
-                  max(model$model$Tleaf, na.rm = TRUE),
-                  length.out = n),
-      PC1 = pc1_val,
-      Species = placeholder_species,
-      curveID = model$model$curveID[1]
+      Tleaf   = seq(min(model$model$Tleaf, na.rm = TRUE),
+                    max(model$model$Tleaf, na.rm = TRUE), length.out = n),
+      PC1 = key$PC1[k], Species = placeholder_species,
+      curveID = placeholder_curve, Site = key$Site[k]
     )
-    
-    X <- predict(model, newdata = newdat, type = "lpmatrix")
-    coefs <- coef(model)
+    X <- predict(model, newdata = newdat, type = "lpmatrix"); coefs <- coef(model)
     species_cols <- grep("^Species", colnames(X))
-    if (length(species_cols) > 0)
-      X[, species_cols] <- rowMeans(X[, species_cols, drop = FALSE])
-    
-    newdat$fit <- as.vector(X %*% coefs)
-    newdat$response <- response
-    newdat$PC1_group <- as.factor(round(pc1_val, 4))
-    newdat
+    if (length(species_cols) > 0) X[, species_cols] <- rowMeans(X[, species_cols, drop = FALSE])
+    curve_cols <- grep("curveID", colnames(X))        # drop arbitrary curve offset only
+    if (length(curve_cols) > 0) X[, curve_cols] <- 0
+    newdat$fit <- as.vector(X %*% coefs); newdat$response <- response
+    newdat$PC1_group <- as.factor(round(key$PC1[k], 4)); newdat
   })
-  
   bind_rows(pred_list)
 }
 
@@ -111,57 +102,33 @@ pEw <- plot_top_PC1_sites(pred_eW, raw.env.data_pca, "WUE", ymax = 10000)
 # =========================================================
 
 deriv_with_ci_overall <- function(model, n = 200, alpha = 0.05) {
+  placeholder_species <- unique(model$model$Species)[1]
+  placeholder_curve   <- model$model$curveID[1]
+  key  <- unique(model$model[, c("PC1", "Site")])
+  Tseq <- seq(min(model$model$Tleaf, na.rm = TRUE),
+              max(model$model$Tleaf, na.rm = TRUE), length.out = n)
+  eps  <- diff(range(Tseq)) / n
   
-  species_levels <- unique(model$model$Species)
-  placeholder_species <- species_levels[1]
+  Xd_list <- lapply(seq_len(nrow(key)), function(k) {
+    nd <- expand.grid(Tleaf = Tseq, PC1 = key$PC1[k], Species = placeholder_species,
+                      curveID = placeholder_curve, Site = key$Site[k])
+    nd_hi <- nd; nd_hi$Tleaf <- nd$Tleaf + eps
+    nd_lo <- nd; nd_lo$Tleaf <- nd$Tleaf - eps
+    (predict(model, nd_hi, type = "lpmatrix") -
+        predict(model, nd_lo, type = "lpmatrix")) / (2 * eps)
+  })
+  Xd <- Reduce(`+`, Xd_list) / length(Xd_list)        # population average over sites
   
-  Tseq <- seq(
-    min(model$model$Tleaf, na.rm = TRUE),
-    max(model$model$Tleaf, na.rm = TRUE),
-    length.out = n
-  )
-  
-  newdat <- expand.grid(
-    Tleaf  = Tseq,
-    PC1    = mean(model$model$PC1, na.rm = TRUE),
-    Species = placeholder_species,
-    curveID = model$model$curveID[1]
-  )
-  
-  eps <- diff(range(Tseq)) / n
-  
-  newdat_hi <- newdat
-  newdat_lo <- newdat
-  newdat_hi$Tleaf <- newdat$Tleaf + eps
-  newdat_lo$Tleaf <- newdat$Tleaf - eps
-  
-  X_hi <- predict(model, newdat_hi, type = "lpmatrix")
-  X_lo <- predict(model, newdat_lo, type = "lpmatrix")
-  
-  # Finite-difference derivative of the linear predictor
-  Xd <- (X_hi - X_lo) / (2 * eps)
-  
-  # Average Species columns if present (matches your prediction logic)
   species_cols <- grep("^Species", colnames(Xd))
-  if (length(species_cols) > 0) {
-    Xd[, species_cols] <- rowMeans(Xd[, species_cols, drop = FALSE])
-  }
+  if (length(species_cols) > 0) Xd[, species_cols] <- rowMeans(Xd[, species_cols, drop = FALSE])
+  curve_cols <- grep("curveID", colnames(Xd))
+  if (length(curve_cols) > 0) Xd[, curve_cols] <- 0
   
-  beta <- coef(model)
-  Vb   <- vcov(model)
-  
-  deriv <- as.vector(Xd %*% beta)
-  se    <- sqrt(rowSums((Xd %*% Vb) * Xd))
-  
+  beta <- coef(model); Vb <- vcov(model)
+  deriv <- as.vector(Xd %*% beta); se <- sqrt(rowSums((Xd %*% Vb) * Xd))
   crit <- qnorm(1 - alpha / 2)
-  
-  data.frame(
-    Tleaf = Tseq,
-    deriv = deriv,
-    se    = se,
-    lower = deriv - crit * se,
-    upper = deriv + crit * se
-  )
+  data.frame(Tleaf = Tseq, deriv = deriv, se = se,
+             lower = deriv - crit * se, upper = deriv + crit * se)
 }
 
 plot_deriv_overall <- function(deriv_df, response_name, shade_range = NULL){
@@ -233,9 +200,11 @@ find_upper_crossing <- function(deriv_df) {
 # Lower bound: onset of significant A decline (dA/dTleaf CI -> entirely negative)
 Tleaf_lower <- find_upper_crossing(deriv_A)
 # Upper bound: onset of significant E decline (dE/dTleaf CI -> entirely negative)
-Tleaf_upper <- find_upper_crossing(deriv_E)
+Tleaf_lower <- find_upper_crossing(deriv_A)   # onset of significant A decline
+Tleaf_upper <- max(deriv_E$Tleaf)             # E does not decline; window is open-ended
 
-message(sprintf("Decoupling window: %.2f to %.2f deg C", Tleaf_lower, Tleaf_upper))
+message(sprintf("Decoupling begins at %.2f deg C; open-ended (E does not significantly decrease)",
+                Tleaf_lower))
 
 # --- Rescale panel G for a narrower y-axis to better align with other panels
 # Data are scaled by 10^4 (multiplier included in axis title)
