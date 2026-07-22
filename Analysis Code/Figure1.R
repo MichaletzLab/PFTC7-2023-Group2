@@ -71,6 +71,7 @@ pc.plot <- ggplot(raw.env.data_pca,
   geom_point(size = 2, alpha = 0.8, shape = 16) +
   geom_smooth(method = "lm", se = TRUE, linewidth = 1, alpha = 0.15) +
   scale_color_manual(values = country_colors, name = "") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.12))) +   # top headroom so "3" clears the D label
   theme_classic(base_size = 18) +
   labs(x = "Elevation (m a.s.l.)", y = "PC1 (dimensionless)") +
   theme(legend.position = "none")

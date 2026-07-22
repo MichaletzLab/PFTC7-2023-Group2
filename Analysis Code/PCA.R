@@ -108,8 +108,8 @@ pca_plot <- ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = 0, linetype = "dashed") +
   labs(
-    x = paste0("PC1 (", round(summary(pca_res)$importance[2, 1] * 100, 1), "%)"),
-    y = paste0("PC2 (", round(summary(pca_res)$importance[2, 2] * 100, 1), "%)")) +
+    x = sprintf("PC1 (%.1f%%)", summary(pca_res)$importance[2, 1] * 100),
+    y = sprintf("PC2 (%.1f%%)", summary(pca_res)$importance[2, 2] * 100)) +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold"),
     panel.grid = element_blank(),
