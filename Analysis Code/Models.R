@@ -159,4 +159,33 @@ gam_mod_PC1_only_WUE <- gam(WUE ~ s(Tleaf, k=5) + s(PC1, k=5) + ti(Tleaf, PC1, k
                             + Species + s(curveID, bs="re"),
                             data = raw.env.data_pca, method = "REML")
 
+# Cache fitted models
+dir.create("outputs", showWarnings = FALSE)
+
+gams_fig3 <- list(
+  A    = gam_mod_A_PC1,
+  E    = gam_mod_E_PC1,
+  gsw  = gam_mod_gsw_PC1,
+  iWUE = gam_mod_iWUE_PC1,
+  WUE  = gam_mod_WUE_PC1
+)
+saveRDS(gams_fig3, "outputs/gams_fig3.rds")
+
+gams_figS3 <- list(
+  env_A    = gam_mod_full_environ_A,    env_E    = gam_mod_full_environ_E,
+  env_gsw  = gam_mod_full_environ_gsw,  env_iWUE = gam_mod_full_environ_iWUE,
+  env_WUE  = gam_mod_full_environ_WUE,
+  pc_A     = gam_mod_full_PC_A,         pc_E     = gam_mod_full_PC_E,
+  pc_gsw   = gam_mod_full_PC_gsw,       pc_iWUE  = gam_mod_full_PC_iWUE,
+  pc_WUE   = gam_mod_full_PC_WUE,
+  pc1_A    = gam_mod_PC1_only_A,        pc1_E    = gam_mod_PC1_only_E,
+  pc1_gsw  = gam_mod_PC1_only_gsw,      pc1_iWUE = gam_mod_PC1_only_iWUE,
+  pc1_WUE  = gam_mod_PC1_only_WUE
+)
+saveRDS(gams_figS3, "outputs/gams_figS3.rds")
+
+cat(sprintf("Cached. Sizes: fig3 %.1f MB, figS3 %.1f MB\n",
+            file.size("outputs/gams_fig3.rds") / 1e6,
+            file.size("outputs/gams_figS3.rds") / 1e6))
+
 
