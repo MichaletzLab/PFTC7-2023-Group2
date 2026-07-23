@@ -200,7 +200,6 @@ find_upper_crossing <- function(deriv_df) {
 # Lower bound: onset of significant A decline (dA/dTleaf CI -> entirely negative)
 Tleaf_lower <- find_upper_crossing(deriv_A)
 # Upper bound: onset of significant E decline (dE/dTleaf CI -> entirely negative)
-Tleaf_lower <- find_upper_crossing(deriv_A)   # onset of significant A decline
 Tleaf_upper <- max(deriv_E$Tleaf)             # E does not decline; window is open-ended
 
 message(sprintf("Decoupling begins at %.2f deg C; open-ended (E does not significantly decrease)",
