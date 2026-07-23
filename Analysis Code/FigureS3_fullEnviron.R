@@ -120,7 +120,7 @@ plot_environ_compare <- function(pred_env, pred_pc, pred_pc1, raw_df, response_n
     geom_line(data = pred_pc1, aes(x = Tleaf, y = fit, color = "PC1-only"), linewidth = 1.2, linetype = "dotdash") +
     scale_color_manual(values = c("Full Env" = "#D81B60", "Full PC" = "#1E88E5", "PC1-only" = "#FFC107")) +
     theme_classic() +
-    coord_cartesian(ylim = if (is.null(ymax)) NULL else c(NA, ymax))
+    coord_cartesian(ylim = if (is.null(ymax)) NULL else c(NA, ymax)) +
     labs(x = expression(Leaf~temperature~(degree*C)),
          y = y_lab,
          color = "")
