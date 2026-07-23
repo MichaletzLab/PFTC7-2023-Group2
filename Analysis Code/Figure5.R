@@ -28,6 +28,18 @@ species_labels <- function(levels) {
 }
 sp_labs <- species_labels(sp_levels)
 
+# Function to plot dashed line when non-significant, and p-value in panels
+ALPHA <- 0.05
+
+p_linetype <- function(p) if (!is.na(p) && p < ALPHA) "solid" else "dashed"
+
+p_fmt <- function(p) {
+  if (is.na(p)) return("italic(p) == NA")
+  if (p < 0.001) return("italic(p) < 0.001")
+  sprintf("italic(p) == %s",
+          formatC(p, format = "f", digits = if (p < 0.01) 3 else 2))
+}
+
 # Define symbols and units
 u_flux       <- quote(mol ~ m^-2 ~ s^-1)                   # E, gsw : level
 u_flux_slope <- quote(mol ~ m^-2 ~ s^-1 ~ degree*"C"^-1)   # E, gsw : slope
@@ -84,10 +96,14 @@ fit_var <- function(col, data) {
 slope_panel <- function(res, v) {
   sym <- var_sym[[v]]; u <- var_usl[[v]]
   ggplot() +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+    geom_hline(yintercept = 0, linetype = "dotted", color = "grey30", linewidth = 0.7) +
     geom_point(data = res$percurve, aes(PC1, slope, color = Species), size = 2, alpha = 0.8) +
     geom_ribbon(data = res$trend_slope, aes(PC1, ymin = lwr, ymax = upr), fill = "grey70", alpha = 0.4) +
-    geom_line(data = res$trend_slope, aes(PC1, fit), color = "black", linewidth = 0.6) +
+    geom_line(data = res$trend_slope, aes(PC1, fit), color = "black", linewidth = 0.7,
+              linetype = p_linetype(res$p_slope)) +
+    annotate("text", x = -Inf, y = Inf, label = p_fmt(res$p_slope), parse = TRUE,
+             hjust = -0.20, vjust = 1.5, size = 3.5) +
+    scale_y_continuous(expand = expansion(mult = c(0.05, 0.15))) +
     scale_color_discrete(drop = FALSE, labels = sp_labs) +
     coord_cartesian(xlim = pc1_lim) +
     labs(x = "PC1 (dimensionless)",
@@ -96,12 +112,17 @@ slope_panel <- function(res, v) {
          title = var_sym[[v]]) +
     theme_classic(base_size = 12)
 }
+
 int_panel <- function(res, v) {
   sym <- sym_level[[v]]; u <- var_ulv[[v]]
   ggplot() +
     geom_point(data = res$percurve, aes(PC1, intercept, color = Species), size = 2, alpha = 0.8) +
     geom_ribbon(data = res$trend_int, aes(PC1, ymin = lwr, ymax = upr), fill = "grey70", alpha = 0.4) +
-    geom_line(data = res$trend_int, aes(PC1, fit), color = "black", linewidth = 0.6) +
+    geom_line(data = res$trend_int, aes(PC1, fit), color = "black", linewidth = 0.7,
+              linetype = p_linetype(res$p_int)) +
+    annotate("text", x = -Inf, y = Inf, label = p_fmt(res$p_int), parse = TRUE,
+             hjust = -0.20, vjust = 1.5, size = 3.5) +
+    scale_y_continuous(expand = expansion(mult = c(0.05, 0.15))) +
     scale_color_discrete(drop = FALSE, labels = sp_labs) +
     coord_cartesian(xlim = pc1_lim) +
     labs(x = "PC1 (dimensionless)",
