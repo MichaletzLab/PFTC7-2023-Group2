@@ -28,6 +28,12 @@ if (pca_res$rotation["mean_air", "PC1"] < 0) {
   pca_res$x[, "PC1"]        <- -pca_res$x[, "PC1"]
 }
 
+# Pin PC2 orientation to dry-to-wet (positive VWC loading)
+if (pca_res$rotation["mean_moist_pct", "PC2"] < 0) {
+  pca_res$rotation[, "PC2"] <- -pca_res$rotation[, "PC2"]
+  pca_res$x[, "PC2"]        <- -pca_res$x[, "PC2"]
+}
+
 # One score row per site
 pc_scores <- as.data.frame(pca_res$x) %>%
   bind_cols(env_site %>% select(Elevation, Country))
