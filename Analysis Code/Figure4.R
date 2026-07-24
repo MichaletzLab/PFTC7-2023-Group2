@@ -3,11 +3,12 @@
 # a peaked/unimodal model. Then, regress fitted parameters on the PC axis.
 #
 # The axis and output names are parameterized. Run this file directly for
-# Figure 4 (PC1). FigureS4.R sets PC_AXIS and FIG_TAG, then sources this file.
+# Figure 4 (PC1). FigureS4.R sets PC_AXIS, then sources this file.
 
 # ---- axis and output configuration -----------------------------------------
 if (!exists("PC_AXIS")) PC_AXIS <- "PC1"
-if (!exists("FIG_TAG")) FIG_TAG <- "Figure4"
+FIG_TAG <- if (PC_AXIS == "PC1") "Figure4" else "FigureS4"
+dir.create("outputs", showWarnings = FALSE)
 message("Sharpe-Schoolfield parameter figure: axis = ", PC_AXIS,
         ", output tag = ", FIG_TAG)
 
@@ -19,7 +20,7 @@ library(lmerTest)   # Satterthwaite p-values for lmer
 
 source("Analysis Code/Fig_helpers.R")
 
-fig4 <- read.csv("figure4_ss_parameters.csv", stringsAsFactors = FALSE)
+fig4 <- read.csv(file.path("outputs", "figure4_ss_parameters.csv"), stringsAsFactors = FALSE)
 
 # PC score (mean per curve) and Species from the point-level PCA object.
 # The axis column is renamed to a neutral "PC" so that every formula,
@@ -94,7 +95,7 @@ cat(sprintf("\n==== %s: %s slope, random-intercept vs fixed-effects species ====
             FIG_TAG, PC_AXIS))
 print(fig4_print, row.names = FALSE)
 
-compare_csv <- paste0(FIG_TAG, "_species_structure_comparison.csv")
+compare_csv <- file.path("outputs", paste0(FIG_TAG, "_species_structure_comparison.csv"))
 write.csv(fig4_compare, compare_csv, row.names = FALSE)
 cat("\nWrote:", compare_csv, "\n")
 
@@ -156,7 +157,7 @@ Fig4 <- ggarrange(plotlist = plots, ncol = 2, nrow = 4,
 
 # output PNG
 ggsave(
-  filename = paste0(FIG_TAG, ".png"),
+  filename = file.path("outputs", paste0(FIG_TAG, ".png")),
   plot = Fig4,
   width  = 8,
   height = 11,
@@ -167,4 +168,104 @@ ggsave(
 )
 
 # output PDF
-ggsave(paste0(FIG_TAG, ".pdf"), Fig4, width = 8, height = 11, device = cairo_pdf)
+ggsave(file.path("outputs", paste0(FIG_TAG, ".pdf")), Fig4,
+       width = 8, height = 11, device = cairo_pdf)
+
+
+# ---- Stats for text and captions -----------------------------------------
+p_bound <- function(p) {
+  if (!is.finite(p)) return("NA")
+  b2 <- floor(p * 100) / 100
+  if (b2 >= 0.01) return(formatC(b2, format = "f", digits = 2))
+  b3 <- floor(p * 1000) / 1000
+  if (b3 >= 0.001) return(formatC(b3, format = "f", digits = 3))
+  "< 0.001"
+}
+
+panel_letter <- c("A Topt" = "A", "iWUE Topt" = "B",
+                  "A Theta" = "C", "iWUE Theta" = "D",
+                  "A Ea" = "E", "iWUE Ea" = "F",
+                  "A Ed" = "G", "iWUE Ed" = "H")
+
+rep_rows <- list()
+for (nm in names(models)) {
+  parts <- strsplit(nm, " ")[[1]]
+  v <- parts[1]; pp <- parts[2]
+  
+  m  <- models[[nm]]
+  s  <- summary(m)$coefficients
+  vc <- as.data.frame(lme4::VarCorr(m))
+  has_site <- any(vc$grp == "Site")
+  
+  d  <- fig4[fig4$variable == v, ]
+  dd <- data.frame(y = d[[pp]], PC = d$PC, Site = d$Site)
+  dd <- dd[stats::complete.cases(dd), ]
+  
+  sm <- dd %>%
+    group_by(Site) %>%
+    summarise(PC = first(PC), y = mean(y), .groups = "drop")
+  ms <- lm(y ~ PC, data = sm)
+  ss <- summary(ms)$coefficients
+  
+  rep_rows[[nm]] <- data.frame(
+    pc_axis    = PC_AXIS,
+    panel      = unname(panel_letter[nm]),
+    variable   = v,
+    parameter  = pp,
+    n_curve    = nrow(dd),
+    estimate   = s["PC", "Estimate"],
+    se         = s["PC", "Std. Error"],
+    df         = s["PC", "df"],
+    p          = s["PC", "Pr(>|t|)"],
+    site_term  = has_site,
+    n_site     = nrow(sm),
+    site_slope = ss["PC", "Estimate"],
+    site_df    = df.residual(ms),
+    site_p     = ss["PC", "Pr(>|t|)"],
+    stringsAsFactors = FALSE)
+}
+rep4 <- do.call(rbind, rep_rows)
+rep4 <- rep4[order(rep4$panel), ]
+rownames(rep4) <- NULL
+
+cat(sprintf("\n================ %s: reported statistics (%s) ================\n",
+            FIG_TAG, PC_AXIS))
+for (i in seq_len(nrow(rep4))) {
+  r <- rep4[i, ]
+  cat(sprintf("%-1s  %-4s %-5s  n=%3d  est=%9.4g  se=%8.4g  df=%6.1f  p=%.6f  [%s]\n",
+              r$panel, r$variable, r$parameter, r$n_curve,
+              r$estimate, r$se, r$df, r$p,
+              if (r$site_term) "site+species" else "species only"))
+}
+
+sig    <- rep4$p <  ALPHA
+nonsig <- rep4$p >= ALPHA
+
+cat(sprintf("\nNominally significant panels (p < %.2f): %s\n", ALPHA,
+            if (any(sig)) paste(rep4$panel[sig], collapse = ", ") else "none"))
+if (any(nonsig))
+  cat(sprintf("Caption bound over non-significant panels: all p >= %s (min p = %.6f, panel %s)\n",
+              p_bound(min(rep4$p[nonsig])), min(rep4$p[nonsig]),
+              rep4$panel[nonsig][which.min(rep4$p[nonsig])]))
+
+keep <- rep4$site_term
+if (any(keep))
+  cat(sprintf("Caption bound over panels retaining the site term (%s): all p >= %s\n",
+              paste(rep4$panel[keep], collapse = ", "),
+              p_bound(min(rep4$p[keep]))))
+
+drop <- !rep4$site_term
+if (any(drop)) {
+  cat("\nSite-level tests where the site term was dropped\n")
+  cat("(nine site means regressed on the PC score; df = 7):\n")
+  for (i in which(drop)) {
+    r <- rep4[i, ]
+    cat(sprintf("  %-1s  %-4s %-5s   curve p=%.6f (df=%6.1f)   site p=%.4f (df=%d, slope=%.4f)\n",
+                r$panel, r$variable, r$parameter, r$p, r$df,
+                r$site_p, r$site_df, r$site_slope))
+  }
+}
+
+out_csv <- file.path("outputs", paste0(FIG_TAG, "_reported_statistics.csv"))
+write.csv(rep4, out_csv, row.names = FALSE)
+cat("\nWrote:", out_csv, "\n")

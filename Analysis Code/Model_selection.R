@@ -36,9 +36,9 @@ suppressMessages({ library(dplyr); library(nls.multstart) })
 
 # ----------------------------- user settings --------------------------------
 INPUT_CSV    <- "data/raw.discardHooks_data.csv"
-OUT_PERCURVE <- "model_selection_percurve.csv"
-OUT_CLASS    <- "model_selection_classification.csv"
-OUT_WITHIN   <- "model_selection_withinfamily.csv"
+OUT_PERCURVE <- file.path("outputs", "model_selection_percurve.csv")
+OUT_CLASS    <- file.path("outputs", "model_selection_classification.csv")
+OUT_WITHIN   <- file.path("outputs", "model_selection_withinfamily.csv")
 T_REF        <- 25     # anchor for centering (C)
 N_ITER       <- 500    # nls_multstart random starts (drop to 250 if slow)
 MARGIN       <- 4      # interior-optimum margin (C); classifications invariant over 2-5 C
@@ -46,6 +46,7 @@ PEAK_FRAC    <- 0.5    # variable is called peaked if >= this fraction of curves
 MIN_POINTS   <- 6
 VARS         <- c("A", "gsw", "E", "iWUE", "eWUE")   # eWUE = WUE as per earlier code
 set.seed(1)
+dir.create("outputs", showWarnings = FALSE)
 
 # ----------------------------- model functions ------------------------------
 mod_exp <- function(Tleaf, a, b, T_ref = T_REF) a * exp(b * (Tleaf - T_ref))
@@ -194,7 +195,7 @@ fig4 <- data.frame(
   Tmin = sscols$Tmin, Tmax = sscols$Tmax, interior = sscols$interior,
   stringsAsFactors = FALSE)
 fig4$Theta <- mapply(ss_breadth, fig4$J_ref, fig4$Ea, fig4$Ed, fig4$Topt, fig4$Tmin, fig4$Tmax)
-write.csv(fig4, "figure4_ss_parameters.csv", row.names = FALSE)
+write.csv(fig4, file.path("outputs", "figure4_ss_parameters.csv"), row.names = FALSE)
 message("Wrote Figure 4 SS parameters (A, iWUE): figure4_ss_parameters.csv")
 
 # --------------------- within-family AIC comparison helper ------------------

@@ -3,11 +3,12 @@
 # component axis.
 #
 # The axis and output names are parameterized. Run this file directly for
-# Figure 5 (PC1). FigureS5.R sets PC_AXIS and FIG_TAG, then sources this file.
+# Figure 5 (PC1). FigureS5.R sets PC_AXIS, then sources this file.
 
 # ---- axis and output configuration -----------------------------------------
 if (!exists("PC_AXIS")) PC_AXIS <- "PC1"
-if (!exists("FIG_TAG")) FIG_TAG <- "Figure5"
+FIG_TAG <- if (PC_AXIS == "PC1") "Figure5" else "FigureS5"
+dir.create("outputs", showWarnings = FALSE)
 message("Monotonic response figure: axis = ", PC_AXIS,
         ", output tag = ", FIG_TAG)
 
@@ -145,8 +146,106 @@ grid6 <- plot_grid(plotlist = panels_noleg, ncol = 3, nrow = 2, align = "hv",
 Fig5 <- plot_grid(grid6, legend, ncol = 2, rel_widths = c(1, 0.28))
 
 # Output PNG
-ggsave(paste0(FIG_TAG, ".png"), plot = Fig5, width = 13, height = 8, units = "in",
-       dpi = 300, bg = "white", limitsize = FALSE)
+ggsave(file.path("outputs", paste0(FIG_TAG, ".png")), plot = Fig5,
+       width = 13, height = 8, units = "in", dpi = 300, bg = "white",
+       limitsize = FALSE)
 
 # Output PDF
-ggsave(paste0(FIG_TAG, ".pdf"), plot = Fig5, width = 13, height = 8, device = cairo_pdf)
+ggsave(file.path("outputs", paste0(FIG_TAG, ".pdf")), plot = Fig5,
+       width = 13, height = 8, device = cairo_pdf)
+
+
+
+# ---- Stats for text and captions -----------------------------------------
+p_bound <- function(p) {
+  if (!is.finite(p)) return("NA")
+  b2 <- floor(p * 100) / 100
+  if (b2 >= 0.01) return(formatC(b2, format = "f", digits = 2))
+  b3 <- floor(p * 1000) / 1000
+  if (b3 >= 0.001) return(formatC(b3, format = "f", digits = 3))
+  "< 0.001"
+}
+
+site_map <- dat5 %>%
+  group_by(curveID) %>%
+  summarise(Site = first(Site), .groups = "drop")
+
+rep_rows <- list()
+res_list <- list(E = resE, gsw = resG, WUE = resW)
+letters_slope <- c(E = "A", gsw = "B", WUE = "C")
+letters_int   <- c(E = "D", gsw = "E", WUE = "F")
+
+for (v in c("E", "gsw", "WUE")) {
+  r  <- res_list[[v]]
+  pc <- r$percurve %>% left_join(site_map, by = "curveID")
+  sm <- pc %>%
+    group_by(Site) %>%
+    summarise(PC = first(PC), slope = mean(slope),
+              intercept = mean(intercept), .groups = "drop")
+  
+  ms <- lm(slope ~ PC, data = sm);     ss <- summary(ms)$coefficients
+  mi <- lm(intercept ~ PC, data = sm); si <- summary(mi)$coefficients
+  
+  full_slope <- identical(r$structure, "site intercept + slope")
+  
+  rep_rows[[paste(v, "slope")]] <- data.frame(
+    pc_axis = PC_AXIS, panel = unname(letters_slope[v]), variable = v,
+    quantity = "temperature sensitivity", n_curve = nrow(pc),
+    df = r$df_slope, p = r$p_slope,
+    site_term = full_slope, structure = r$structure,
+    n_site = nrow(sm), site_slope = ss["PC", "Estimate"],
+    site_df = df.residual(ms), site_p = ss["PC", "Pr(>|t|)"],
+    stringsAsFactors = FALSE)
+  
+  rep_rows[[paste(v, "level")]] <- data.frame(
+    pc_axis = PC_AXIS, panel = unname(letters_int[v]), variable = v,
+    quantity = "value at 25 degC", n_curve = nrow(pc),
+    df = r$df_int, p = r$p_int,
+    site_term = TRUE, structure = r$structure,
+    n_site = nrow(sm), site_slope = si["PC", "Estimate"],
+    site_df = df.residual(mi), site_p = si["PC", "Pr(>|t|)"],
+    stringsAsFactors = FALSE)
+}
+rep5 <- do.call(rbind, rep_rows)
+rep5 <- rep5[order(rep5$panel), ]
+rownames(rep5) <- NULL
+
+cat(sprintf("\n================ %s: reported statistics (%s) ================\n",
+            FIG_TAG, PC_AXIS))
+for (i in seq_len(nrow(rep5))) {
+  r <- rep5[i, ]
+  cat(sprintf("%-1s  %-4s %-24s  df=%6.1f  p=%.6f  [%s]\n",
+              r$panel, r$variable, r$quantity, r$df, r$p, r$structure))
+}
+
+sig    <- rep5$p <  ALPHA
+nonsig <- rep5$p >= ALPHA
+
+cat(sprintf("\nNominally significant panels (p < %.2f): %s\n", ALPHA,
+            if (any(sig)) paste(rep5$panel[sig], collapse = ", ") else "none"))
+if (any(nonsig))
+  cat(sprintf("Caption bound over non-significant panels: all p >= %s (min p = %.6f, panel %s)\n",
+              p_bound(min(rep5$p[nonsig])), min(rep5$p[nonsig]),
+              rep5$panel[nonsig][which.min(rep5$p[nonsig])]))
+
+keep <- rep5$site_term
+if (any(keep))
+  cat(sprintf("Caption bound over panels with the relevant site term retained (%s): all p >= %s\n",
+              paste(rep5$panel[keep], collapse = ", "),
+              p_bound(min(rep5$p[keep]))))
+
+drop <- !rep5$site_term
+if (any(drop)) {
+  cat("\nSite-level tests where the site slope was dropped\n")
+  cat("(nine site means regressed on the PC score; df = 7):\n")
+  for (i in which(drop)) {
+    r <- rep5[i, ]
+    cat(sprintf("  %-1s  %-4s %-24s   curve p=%.6f (df=%6.1f)   site p=%.4f (df=%d)\n",
+                r$panel, r$variable, r$quantity, r$p, r$df,
+                r$site_p, r$site_df))
+  }
+}
+
+out_csv <- file.path("outputs", paste0(FIG_TAG, "_reported_statistics.csv"))
+write.csv(rep5, out_csv, row.names = FALSE)
+cat("\nWrote:", out_csv, "\n")

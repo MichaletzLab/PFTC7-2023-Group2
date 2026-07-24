@@ -5,9 +5,8 @@
 # Requires: DataPrep.R and PCA.R.
 
 PC_AXIS <- "PC2"
-FIG_TAG <- "FigureS5"
 
 source("Analysis Code/Figure5.R")
 
-message("\nPC_AXIS is now '", PC_AXIS, "'. Restart R, or set PC_AXIS <- \"PC1\" ",
-        "and FIG_TAG <- \"Figure5\", before running Figure5.R in this session.")
+message("\nPC_AXIS is now '", PC_AXIS, "'. Restart R, or set PC_AXIS <- \"PC1\", ",
+        "before running the main-text figures in this session.")
