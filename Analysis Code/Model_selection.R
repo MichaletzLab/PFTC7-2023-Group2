@@ -195,8 +195,9 @@ fig4 <- data.frame(
   Tmin = sscols$Tmin, Tmax = sscols$Tmax, interior = sscols$interior,
   stringsAsFactors = FALSE)
 fig4$Theta <- mapply(ss_breadth, fig4$J_ref, fig4$Ea, fig4$Ed, fig4$Topt, fig4$Tmin, fig4$Tmax)
-write.csv(fig4, file.path("outputs", "figure4_ss_parameters.csv"), row.names = FALSE)
-message("Wrote Figure 4 SS parameters (A, iWUE): figure4_ss_parameters.csv")
+out_ss <- file.path("outputs", "figure4_ss_parameters.csv")
+write.csv(fig4, out_ss, row.names = FALSE)
+message("Wrote Figure 4 SS parameters (A, iWUE): ", out_ss)
 
 # --------------------- within-family AIC comparison helper ------------------
 # Restricted to `ids` and to curves where BOTH `models` converged.
