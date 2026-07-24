@@ -1,6 +1,6 @@
-# Panels A-E: GAM predictions for each site, clipped to leaf temperatures where
-# at least 4 curves from that site were measured (this can be changed below).
-# Panels F-J: First derivatives averaged across sites, truncated to temperatures
+# Panels A-E: GAM predictions for each site, restricted to leaf temperatures 
+# where at least 4 curves from that site were measured (can be changed below).
+# Panels F-J: First derivatives averaged across sites, restricted to temperatures
 # with common support (the intersection of the nine site windows).
 # Models are fitted to all 117 curves in Models.R. The restriction applies to
 # prediction and display only - no fitted values change.
